@@ -239,6 +239,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-shared-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-purple);letter-spacing:1px;margin-top:1rem;opacity:0.7;}
 .lb-reset-note{text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-top:0.4rem;opacity:0.5;}
 .lb-played-badge{font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;padding:2px 6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-left:6px;vertical-align:middle;}
+.lb-seed-badge{font-family:'Orbitron',monospace;font-size:8px;color:var(--neon-purple);letter-spacing:1px;padding:2px 6px;border:1px solid rgba(191,0,255,0.3);border-radius:8px;margin-left:6px;vertical-align:middle;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -563,9 +564,10 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ══════════════════════════════════════════════════════════════════
   // ── LEADERBOARD COMPARTIDO — RENOVACIÓN MENSUAL ───────────────────
   //
-  // Claves: "lb_GAME_YYYYMM_USERNAME"
-  // Todos los jugadores que abran un juego quedan registrados.
-  // Al cambiar de mes el prefijo cambia y el ranking arranca limpio.
+  // • Claves: "lb_GAME_YYYYMM_USERNAME" (storage compartido)
+  // • Si el lb está vacío este mes → siembra datos de muestra automáticamente
+  // • El 1er día del mes, entre 00:00 y 00:03 → muestra banner de MANTENIMIENTO
+  //   con cuenta regresiva en vivo; al llegar a 0 recarga el ranking fresco.
   // ══════════════════════════════════════════════════════════════════
 
   function getMonthKey(){
@@ -584,108 +586,168 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     if(el) el.textContent='📅 '+getMonthLabel().toUpperCase();
   }
 
-  /**
-   * Construye la clave de storage para un jugador/juego/mes.
-   * Usa guion bajo como separador para evitar problemas con ':' en algunos entornos.
-   * Formato: "lb_GAME_YYYYMM_username"
-   */
-  function lbKey(game, username){
+  /** ¿Estamos en la ventana de mantenimiento de inicio de mes?
+   *  Día 1 del mes, entre 00:00:00 y 00:02:59 (3 minutos) */
+  function isMaintenanceWindow(){
+    const now=new Date();
+    if(now.getDate()!==1) return false;
+    const secsFromMidnight=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+    return secsFromMidnight<180;
+  }
+
+  /** Segundos que faltan para salir del mantenimiento */
+  function maintenanceSecondsLeft(){
+    const now=new Date();
+    const secsFromMidnight=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+    return Math.max(0,180-secsFromMidnight);
+  }
+
+  function lbKey(game,username){
     return 'lb_'+game+'_'+getMonthKey()+'_'+username.toLowerCase();
   }
 
-  /**
-   * Registra o actualiza el score de un jugador en el leaderboard compartido.
-   * - Si el jugador nunca ha jugado este mes, guarda el score directamente.
-   * - Solo sobreescribe si el nuevo score es MEJOR:
-   *     num    → más intentos restantes = mejor (mayor)
-   *     memory → menos movimientos     = mejor (menor)
-   *     puzzle → más completados       = mejor (mayor)
-   */
-  /**
-   * data = { score, extras: {} }
-   * extras por juego:
-   *   num    → { intentosUsados, intentosRestantes }
-   *   memory → { movimientos, fallos }
-   *   puzzle → { completados, errores }
-   */
-  async function lbAddScore(game, username, data){
+  async function lbAddScore(game,username,data){
     if(!username) return;
-    const key=lbKey(game, username);
-    const score = typeof data === 'object' ? data.score : data;
-    const payload = typeof data === 'object' ? data : { score };
+    const key=lbKey(game,username);
+    const score=typeof data==='object'?data.score:data;
+    const payload=typeof data==='object'?data:{score};
     try {
       let storedScore=null;
       try {
-        const existing=await window.storage.get(key, true);
+        const existing=await window.storage.get(key,true);
         if(existing){
-          try { storedScore=JSON.parse(existing.value).score; } catch(e){ storedScore=parseFloat(existing.value); }
+          try{storedScore=JSON.parse(existing.value).score;}catch(e){storedScore=parseFloat(existing.value);}
         }
-      } catch(e){ storedScore=null; }
-
+      } catch(e){}
       let shouldSave=false;
-      if(storedScore===null){
-        shouldSave=true;
-      } else if(game==='memory'){
-        shouldSave=score<storedScore;
-      } else {
-        shouldSave=score>storedScore;
-      }
-
-      if(shouldSave){
-        await window.storage.set(key, JSON.stringify(payload), true);
-      }
-    } catch(err){
-      console.warn('lbAddScore error:', err);
-    }
+      if(storedScore===null){shouldSave=true;}
+      else if(game==='memory'){shouldSave=score<storedScore;}
+      else{shouldSave=score>storedScore;}
+      if(shouldSave) await window.storage.set(key,JSON.stringify(payload),true);
+    } catch(err){console.warn('lbAddScore error:',err);}
   }
 
-  /**
-   * Registra que un usuario "jugó" este juego este mes.
-   * Si aún no tiene score, guarda 0 para que aparezca en el ranking.
-   * Esto asegura que todos los que abran el juego sean visibles.
-   */
-  async function lbRegisterPlayer(game, username){
+  async function lbRegisterPlayer(game,username){
     if(!username) return;
-    const key=lbKey(game, username);
+    const key=lbKey(game,username);
     try {
       let existing=null;
-      try { existing=await window.storage.get(key, true); } catch(e){}
-      if(!existing){
-        await window.storage.set(key, JSON.stringify({score:0}), true);
-      }
-    } catch(err){
-      console.warn('lbRegisterPlayer error:', err);
-    }
+      try{existing=await window.storage.get(key,true);}catch(e){}
+      if(!existing) await window.storage.set(key,JSON.stringify({score:0}),true);
+    } catch(err){console.warn('lbRegisterPlayer error:',err);}
   }
 
-  /**
-   * Carga y renderiza el leaderboard del juego y mes actual.
-   * Lee todas las claves con prefijo "lb_GAME_YYYYMM_" del storage compartido.
-   */
+  // ── DATOS DE MUESTRA (seed) ────────────────────────────────────────
+  // Se insertan automáticamente si el leaderboard de este mes está vacío.
+  // Así el ranking nunca aparece en blanco al inicio del mes.
+  const LB_SEED={
+    num:[
+      {username:'Kbros',     score:5,intentosRestantes:5,intentosUsados:0},
+      {username:'NeonGhost', score:4,intentosRestantes:4,intentosUsados:1},
+      {username:'StarLord99',score:3,intentosRestantes:3,intentosUsados:2},
+      {username:'CyberKid',  score:3,intentosRestantes:3,intentosUsados:2},
+      {username:'AstroPunk', score:2,intentosRestantes:2,intentosUsados:3},
+      {username:'VoidWalker',score:1,intentosRestantes:1,intentosUsados:4},
+    ],
+    memory:[
+      {username:'Kbros',     score:10,movimientos:10,fallos:2},
+      {username:'NeonGhost', score:14,movimientos:14,fallos:5},
+      {username:'StarLord99',score:18,movimientos:18,fallos:8},
+      {username:'CyberKid',  score:22,movimientos:22,fallos:11},
+      {username:'AstroPunk', score:28,movimientos:28,fallos:14},
+      {username:'VoidWalker',score:34,movimientos:34,fallos:18},
+    ],
+    puzzle:[
+      {username:'Kbros',     score:7,completados:7,errores:1},
+      {username:'NeonGhost', score:5,completados:5,errores:2},
+      {username:'StarLord99',score:3,completados:3,errores:4},
+      {username:'CyberKid',  score:2,completados:2,errores:3},
+      {username:'AstroPunk', score:1,completados:1,errores:5},
+      {username:'VoidWalker',score:1,completados:1,errores:4},
+    ]
+  };
+
+  // Conjunto de usernames que son seed (para marcarlos visualmente)
+  const SEED_USERS=new Set(['kbros','neonghost','starlord99','cyberkid','astropunk','voidwalker']);
+
+  /** Siembra datos de muestra si el leaderboard de este mes está vacío */
+  async function lbEnsureSeed(game){
+    const month=getMonthKey();
+    const prefix='lb_'+game+'_'+month+'_';
+    try {
+      const result=await window.storage.list(prefix,true);
+      const keys=result?result.keys:[];
+      if(!keys.length){
+        const entries=LB_SEED[game]||[];
+        for(const e of entries){
+          const key=prefix+e.username.toLowerCase();
+          await window.storage.set(key,JSON.stringify(e),true);
+        }
+      }
+    } catch(err){console.warn('lbEnsureSeed error:',err);}
+  }
+
+  // ── RENDER PRINCIPAL ───────────────────────────────────────────────
   async function lbRender(game){
     updateMonthBadge();
     const content=document.getElementById('lb-content');
+
+    // VENTANA DE MANTENIMIENTO (primeros 3 min del mes)
+    if(isMaintenanceWindow()){
+      const secs=maintenanceSecondsLeft();
+      const m=Math.floor(secs/60);
+      const s=String(secs%60).padStart(2,'0');
+      content.innerHTML=
+        '<div style="text-align:center;padding:2rem 1rem;">'+
+        '<div style="font-family:Orbitron,monospace;font-size:1.5rem;font-weight:900;color:var(--neon-gold);letter-spacing:3px;margin-bottom:0.6rem;animation:pulse 1s infinite">⚙ REINICIANDO RANKING ⚙</div>'+
+        '<div style="font-family:Orbitron,monospace;font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:1.4rem;">NUEVO MES · NUEVA OPORTUNIDAD · EL RANKING SE ESTÁ LIMPIANDO</div>'+
+        '<div style="font-family:Orbitron,monospace;font-size:3rem;font-weight:900;color:var(--neon-cyan);text-shadow:0 0 20px rgba(0,245,255,0.6);margin-bottom:0.5rem;" id="lb-maint-timer">'+m+':'+s+'</div>'+
+        '<div style="font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);letter-spacing:2px;">VUELVE EN UNOS INSTANTES — EL RANKING FRESCO ESTÁ LLEGANDO</div>'+
+        '</div>';
+
+      // Cuenta regresiva en vivo
+      if(window._lbMaintInterval) clearInterval(window._lbMaintInterval);
+      window._lbMaintInterval=setInterval(()=>{
+        const remaining=maintenanceSecondsLeft();
+        const el=document.getElementById('lb-maint-timer');
+        if(!el||remaining<=0){
+          clearInterval(window._lbMaintInterval);
+          window._lbMaintInterval=null;
+          lbRender(game); // Recargar con el ranking nuevo
+          return;
+        }
+        const mm=Math.floor(remaining/60);
+        const ss=String(remaining%60).padStart(2,'0');
+        el.textContent=mm+':'+ss;
+      },1000);
+      return;
+    }
+
+    // Limpiar interval de mantenimiento si ya no aplica
+    if(window._lbMaintInterval){clearInterval(window._lbMaintInterval);window._lbMaintInterval=null;}
+
     content.innerHTML='<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
+
+    // Sembrar datos de muestra si este mes está vacío
+    await lbEnsureSeed(game);
 
     const month=getMonthKey();
     const prefix='lb_'+game+'_'+month+'_';
     let entries=[];
 
     try {
-      const result=await window.storage.list(prefix, true);
-      const keys=result ? result.keys : [];
-      const reads=keys.map(k=>window.storage.get(k, true).catch(()=>null));
+      const result=await window.storage.list(prefix,true);
+      const keys=result?result.keys:[];
+      const reads=keys.map(k=>window.storage.get(k,true).catch(()=>null));
       const values=await Promise.all(reads);
-      keys.forEach((k, i)=>{
+      keys.forEach((k,i)=>{
         if(!values[i]) return;
         const username=k.slice(prefix.length);
         let payload={score:0};
-        try { payload=JSON.parse(values[i].value); } catch(e){ payload={score:parseFloat(values[i].value)||0}; }
-        if(username) entries.push({username, ...payload});
+        try{payload=JSON.parse(values[i].value);}catch(e){payload={score:parseFloat(values[i].value)||0};}
+        if(username) entries.push({username,...payload});
       });
-    } catch(err){
-      console.warn('lbRender error:', err);
-    }
+    } catch(err){console.warn('lbRender error:',err);}
 
     if(game==='memory'){
       entries.sort((a,b)=>a.score>0&&b.score>0?a.score-b.score:a.score>0?-1:b.score>0?1:0);
@@ -704,8 +766,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     const unranked=entries.filter(e=>!e.score||e.score===0);
     const allEntries=[...ranked,...unranked];
 
-    // Cabeceras y columnas extra según juego
-    let extraHeaders='', extraCols;
+    let extraHeaders='',extraCols;
     if(game==='num'){
       extraHeaders='<th style="text-align:center">INTENTOS</th><th style="text-align:center">USADOS</th>';
       extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?e.intentosRestantes??e.score:'—'}</td>`
@@ -724,15 +785,17 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       +'<th>#</th><th>JUGADOR</th>'+extraHeaders
       +'</tr></thead><tbody>';
 
-    allEntries.slice(0,15).forEach((entry, i)=>{
+    allEntries.slice(0,15).forEach((entry,i)=>{
       const inRanked=i<ranked.length;
       const rankClass=inRanked?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
       const rankLabel=inRanked?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
       const isMe=session&&entry.username===session.toLowerCase();
+      const isSeed=SEED_USERS.has(entry.username.toLowerCase());
       html+='<tr class="'+(isMe?'lb-me':'')+'">'
         +'<td class="lb-rank '+rankClass+'">'+rankLabel+'</td>'
         +'<td class="lb-name">'+entry.username.toUpperCase()+(isMe?' ◀':'')
-        +(entry.score===0?' <span class="lb-played-badge">SIN SCORE</span>':'')+'</td>'
+        +(entry.score===0?' <span class="lb-played-badge">SIN SCORE</span>':'')
+        +(isSeed&&entry.score>0?' <span class="lb-seed-badge">BOT</span>':'')+'</td>'
         +extraCols(entry)
         +'</tr>';
     });
@@ -772,9 +835,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     startGame();
     document.getElementById('modal').classList.add('open');
     setTimeout(()=>document.getElementById('guess-input').focus(),300);
-    // Registrar jugador en leaderboard al abrir el juego
     const user=getSession();
-    if(user) lbRegisterPlayer('num', user);
+    if(user) lbRegisterPlayer('num',user);
   });
   document.getElementById('modal-close').addEventListener('click',()=>document.getElementById('modal').classList.remove('open'));
   document.getElementById('modal').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.remove('open');});
@@ -803,9 +865,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.getElementById('game-card-2').addEventListener('click',()=>{
     mgInit();
     document.getElementById('modal-memory').classList.add('open');
-    // Registrar jugador en leaderboard al abrir el juego
     const user=getSession();
-    if(user) lbRegisterPlayer('memory', user);
+    if(user) lbRegisterPlayer('memory',user);
   });
   document.getElementById('modal-memory-close').addEventListener('click',()=>{document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);});
   document.getElementById('modal-memory').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-memory')){document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);}});
@@ -813,311 +874,44 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ── ROMPECABEZAS ──
   (function(){
     const IMAGES=['https://i.ibb.co/KpQvVHvM/SPOILER-Dibujo-comunidad.jpg','https://i.ibb.co/7Jjk4Zs6/Cxn-Horadeaventura.jpg','https://i.ibb.co/60bZkVv5/SPOILER-121-sin-titulo-20260122021505.jpg','https://i.ibb.co/YT7h7Npy/162-sin-titulo-20260301164032.jpg','https://i.ibb.co/ccSk1rLj/132-sin-titulo-20260131195402.jpg','https://i.ibb.co/LhcLXHP2/384a5a0a39a3ec649601cf3847884682.jpg','https://i.ibb.co/XfZgBfBs/168-sin-titulo.jpg','https://i.ibb.co/Q7DkXgQJ/192-sin-titulo-20260323011907.jpg','https://i.ibb.co/R47NcmKW/52-sin-titulo-20260417140643.jpg','https://i.ibb.co/R49Xkjxw/21-sin-titulo-20260421234240.jpg','https://i.ibb.co/kgFbtysb/23-sin-titulo-20260423233105.jpg'];
-    const GRID_N=4, MAX_ERRORS=5, SZ=68;
-    let errors=0, won=false, completedCount=0, blocked=false;
-    let pieces=[], boardSlots=[], traySlots=[];
+    const GRID_N=4,MAX_ERRORS=5,SZ=68;
+    let errors=0,won=false,completedCount=0,blocked=false;
+    let pieces=[],boardSlots=[],traySlots=[];
     let activeDrag=null;
-    let imgPool=[], currentImgIdx=-1;
+    let imgPool=[],currentImgIdx=-1;
 
-    function refillPool(){
-      imgPool=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);
-      if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}
-    }
+    function refillPool(){imgPool=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}}
     function pickNextImg(){if(!imgPool.length)refillPool();currentImgIdx=imgPool.shift();return currentImgIdx;}
 
-    function buildErrBar(){
-      const bar=document.getElementById('pz-err-bar');
-      bar.innerHTML='';
-      for(let i=0;i<MAX_ERRORS;i++){
-        const p=document.createElement('div');
-        p.className='pz-err-pip'+(i<errors?' lit':'');
-        bar.appendChild(p);
-      }
-    }
+    function buildErrBar(){const bar=document.getElementById('pz-err-bar');bar.innerHTML='';for(let i=0;i<MAX_ERRORS;i++){const p=document.createElement('div');p.className='pz-err-pip'+(i<errors?' lit':'');bar.appendChild(p);}}
 
-    function buildGame(){
-      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
-      cancelActiveDrag();
-      document.getElementById('pz-next-banner').classList.remove('show');
-      errors=0; won=false; blocked=false;
-      document.getElementById('pz-msg').textContent='';
-      document.getElementById('pz-msg').className='pz-msg';
-      buildErrBar();
+    function buildGame(){if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}cancelActiveDrag();document.getElementById('pz-next-banner').classList.remove('show');errors=0;won=false;blocked=false;document.getElementById('pz-msg').textContent='';document.getElementById('pz-msg').className='pz-msg';buildErrBar();const imgIdx=pickNextImg();const img=IMAGES[imgIdx];document.getElementById('pz-cur-thumb').src=img;document.getElementById('pz-completed').textContent=completedCount;const total=GRID_N*GRID_N;pieces=[];for(let i=0;i<total;i++){const row=Math.floor(i/GRID_N),col=i%GRID_N;pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});}const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);const area=document.getElementById('pz-game-area');area.innerHTML='';const boardWrap=document.createElement('div');const board=document.createElement('div');board.className='pz-board';board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';boardSlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.boardIdx=i;board.appendChild(cell);boardSlots.push(cell);}boardWrap.appendChild(board);area.appendChild(boardWrap);const tWrap=document.createElement('div');tWrap.className='pz-tray-wrap';const tLbl=document.createElement('div');tLbl.className='pz-tray-label';tLbl.textContent='PIEZAS';tWrap.appendChild(tLbl);const tray=document.createElement('div');tray.className='pz-tray';tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';traySlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-tray-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.trayIdx=i;tray.appendChild(cell);traySlots.push(cell);}tWrap.appendChild(tray);area.appendChild(tWrap);shuffled.forEach((pieceId,trayPos)=>{pieces[pieceId].trayPos=trayPos;renderPieceInTray(pieceId,trayPos);});}
 
-      const imgIdx=pickNextImg();
-      const img=IMAGES[imgIdx];
-      document.getElementById('pz-cur-thumb').src=img;
-      document.getElementById('pz-completed').textContent=completedCount;
+    function makePieceEl(pId){const p=pieces[pId];const el=document.createElement('div');el.className='pz-piece';el.style.backgroundImage='url(\''+p.bg+'\')';el.style.backgroundSize=p.bgSize;el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';el.dataset.pieceId=pId;if(!p.placed)setupDrag(el,pId);return el;}
+    function renderPieceInTray(pId,trayPos){const cell=traySlots[trayPos];cell.innerHTML='';cell.appendChild(makePieceEl(pId));}
+    function renderPieceOnBoard(pId,boardPos){const cell=boardSlots[boardPos];cell.innerHTML='';const el=makePieceEl(pId);if(pieces[pId].placed)el.classList.add('pz-piece-locked');cell.appendChild(el);}
 
-      const total=GRID_N*GRID_N;
-      pieces=[];
-      for(let i=0;i<total;i++){
-        const row=Math.floor(i/GRID_N), col=i%GRID_N;
-        pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});
-      }
+    function cancelActiveDrag(){if(!activeDrag)return;const{sourceEl,ghost,mh,uh,tmh,teh}=activeDrag;document.removeEventListener('mousemove',mh);document.removeEventListener('mouseup',uh);document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',teh);if(ghost&&ghost.parentNode)ghost.remove();if(sourceEl)sourceEl.classList.remove('pz-dragging');activeDrag=null;}
 
-      const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);
-      const area=document.getElementById('pz-game-area');
-      area.innerHTML='';
+    function setupDrag(el,pId){el.addEventListener('mousedown',e=>{if(pieces[pId].placed||won||blocked)return;e.preventDefault();startDrag(e.clientX,e.clientY,pId,el);});el.addEventListener('touchstart',e=>{if(pieces[pId].placed||won||blocked)return;e.preventDefault();const t=e.touches[0];startDrag(t.clientX,t.clientY,pId,el);},{passive:false});}
 
-      const boardWrap=document.createElement('div');
-      const board=document.createElement('div');
-      board.className='pz-board';
-      board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';
-      boardSlots=[];
-      for(let i=0;i<total;i++){
-        const cell=document.createElement('div');
-        cell.className='pz-cell';
-        cell.style.width=SZ+'px';
-        cell.style.height=SZ+'px';
-        cell.dataset.boardIdx=i;
-        board.appendChild(cell);
-        boardSlots.push(cell);
-      }
-      boardWrap.appendChild(board);
-      area.appendChild(boardWrap);
+    function startDrag(cx,cy,pId,el){cancelActiveDrag();const p=pieces[pId];el.classList.add('pz-dragging');const ghost=document.createElement('div');ghost.className='pz-ghost-drag';ghost.style.width=SZ+'px';ghost.style.height=SZ+'px';ghost.style.backgroundImage='url(\''+p.bg+'\')';ghost.style.backgroundSize=p.bgSize;ghost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';ghost.style.transform='translate(-50%,-50%)';ghost.style.left=cx+'px';ghost.style.top=cy+'px';document.body.appendChild(ghost);function onMove(ex,ey){ghost.style.left=ex+'px';ghost.style.top=ey+'px';}function onEnd(ex,ey){cancelActiveDrag();const drop=document.elementFromPoint(ex,ey);handleDropOn(drop,pId);}const mh=e=>onMove(e.clientX,e.clientY);const uh=e=>onEnd(e.clientX,e.clientY);const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};document.addEventListener('mousemove',mh);document.addEventListener('mouseup',uh);document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',teh,{passive:false});activeDrag={pId,sourceEl:el,ghost,mh,uh,tmh,teh};}
 
-      const tWrap=document.createElement('div');
-      tWrap.className='pz-tray-wrap';
-      const tLbl=document.createElement('div');
-      tLbl.className='pz-tray-label';
-      tLbl.textContent='PIEZAS';
-      tWrap.appendChild(tLbl);
-      const tray=document.createElement('div');
-      tray.className='pz-tray';
-      tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';
-      traySlots=[];
-      for(let i=0;i<total;i++){
-        const cell=document.createElement('div');
-        cell.className='pz-tray-cell';
-        cell.style.width=SZ+'px';
-        cell.style.height=SZ+'px';
-        cell.dataset.trayIdx=i;
-        tray.appendChild(cell);
-        traySlots.push(cell);
-      }
-      tWrap.appendChild(tray);
-      area.appendChild(tWrap);
+    function handleDropOn(drop,pId){if(!drop)return;const boardCell=drop.closest('[data-board-idx]');const trayCell=drop.closest('[data-tray-idx]');if(boardCell)tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));else if(trayCell)returnToTray(pId,parseInt(trayCell.dataset.trayIdx));else returnPieceToOrigin(pId);}
+    function returnPieceToOrigin(pId){const p=pieces[pId];if(p.trayPos!=null)renderPieceInTray(pId,p.trayPos);else if(p.boardPos!=null)renderPieceOnBoard(pId,p.boardPos);}
 
-      shuffled.forEach((pieceId,trayPos)=>{
-        pieces[pieceId].trayPos=trayPos;
-        renderPieceInTray(pieceId,trayPos);
-      });
-    }
+    function tryPlaceOnBoard(pId,bIdx){const p=pieces[pId];if(won||p.placed||blocked)return;const occupantEl=boardSlots[bIdx].querySelector('.pz-piece');if(occupantEl){const occId=parseInt(occupantEl.dataset.pieceId);if(pieces[occId].placed){returnPieceToOrigin(pId);return;}const freeTray=findFreeTraySlot(pId);returnToTray(occId,freeTray);}if(bIdx===p.id){if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';p.trayPos=null;}if(p.boardPos!=null){boardSlots[p.boardPos].innerHTML='';p.boardPos=null;}p.placed=true;p.boardPos=bIdx;renderPieceOnBoard(pId,bIdx);boardSlots[bIdx].classList.add('pz-correct-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);checkWin();}else{if(errors>=MAX_ERRORS){returnPieceToOrigin(pId);return;}errors++;buildErrBar();boardSlots[bIdx].classList.add('pz-error-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);returnPieceToOrigin(pId);if(errors>=MAX_ERRORS){blocked=true;document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES — presiona NUEVO JUEGO';}}}
 
-    function makePieceEl(pId){
-      const p=pieces[pId];
-      const el=document.createElement('div');
-      el.className='pz-piece';
-      el.style.backgroundImage='url(\''+p.bg+'\')';
-      el.style.backgroundSize=p.bgSize;
-      el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';
-      el.dataset.pieceId=pId;
-      if(!p.placed) setupDrag(el,pId);
-      return el;
-    }
+    function returnToTray(pId,preferredSlot){const p=pieces[pId];if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';}if(p.boardPos!=null){boardSlots[p.boardPos].innerHTML='';}p.boardPos=null;p.placed=false;let slot=preferredSlot!=null?preferredSlot:findFreeTraySlot();if(traySlots[slot]&&traySlots[slot].querySelector('.pz-piece')){slot=findFreeTraySlot();}p.trayPos=slot;renderPieceInTray(pId,slot);}
+    function findFreeTraySlot(excludePId){for(let i=0;i<traySlots.length;i++){if(!traySlots[i].querySelector('.pz-piece'))return i;}if(excludePId!=null){const ep=pieces[excludePId];if(ep.trayPos!=null)return ep.trayPos;}return 0;}
 
-    function renderPieceInTray(pId,trayPos){
-      const cell=traySlots[trayPos];
-      cell.innerHTML='';
-      cell.appendChild(makePieceEl(pId));
-    }
+    function checkWin(){if(!pieces.every(p=>p.placed))return;won=true;completedCount++;document.getElementById('pz-completed').textContent=completedCount;const user=getSession();if(user)lbAddScore('puzzle',user,{score:completedCount,completados:completedCount,errores:errors});const tempPool=[...imgPool];if(!tempPool.length){const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];const banner=document.getElementById('pz-next-banner');const countEl=document.getElementById('pz-next-countdown');let count=3;countEl.textContent=count;banner.classList.add('show');window._pzCountdown=setInterval(()=>{count--;if(count<=0){clearInterval(window._pzCountdown);window._pzCountdown=null;banner.classList.remove('show');buildGame();}else{countEl.textContent=count;}},1000);}
 
-    function renderPieceOnBoard(pId,boardPos){
-      const cell=boardSlots[boardPos];
-      cell.innerHTML='';
-      const el=makePieceEl(pId);
-      if(pieces[pId].placed) el.classList.add('pz-piece-locked');
-      cell.appendChild(el);
-    }
-
-    function cancelActiveDrag(){
-      if(!activeDrag) return;
-      const {sourceEl,ghost,mh,uh,tmh,teh}=activeDrag;
-      document.removeEventListener('mousemove',mh);
-      document.removeEventListener('mouseup',uh);
-      document.removeEventListener('touchmove',tmh);
-      document.removeEventListener('touchend',teh);
-      if(ghost && ghost.parentNode) ghost.remove();
-      if(sourceEl) sourceEl.classList.remove('pz-dragging');
-      activeDrag=null;
-    }
-
-    function setupDrag(el,pId){
-      el.addEventListener('mousedown',e=>{
-        if(pieces[pId].placed||won||blocked) return;
-        e.preventDefault();
-        startDrag(e.clientX,e.clientY,pId,el);
-      });
-      el.addEventListener('touchstart',e=>{
-        if(pieces[pId].placed||won||blocked) return;
-        e.preventDefault();
-        const t=e.touches[0];
-        startDrag(t.clientX,t.clientY,pId,el);
-      },{passive:false});
-    }
-
-    function startDrag(cx,cy,pId,el){
-      cancelActiveDrag();
-      const p=pieces[pId];
-      el.classList.add('pz-dragging');
-      const ghost=document.createElement('div');
-      ghost.className='pz-ghost-drag';
-      ghost.style.width=SZ+'px';
-      ghost.style.height=SZ+'px';
-      ghost.style.backgroundImage='url(\''+p.bg+'\')';
-      ghost.style.backgroundSize=p.bgSize;
-      ghost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';
-      ghost.style.transform='translate(-50%,-50%)';
-      ghost.style.left=cx+'px';
-      ghost.style.top=cy+'px';
-      document.body.appendChild(ghost);
-
-      function onMove(ex,ey){ ghost.style.left=ex+'px'; ghost.style.top=ey+'px'; }
-      function onEnd(ex,ey){ cancelActiveDrag(); const drop=document.elementFromPoint(ex,ey); handleDropOn(drop,pId); }
-
-      const mh=e=>onMove(e.clientX,e.clientY);
-      const uh=e=>onEnd(e.clientX,e.clientY);
-      const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};
-      const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};
-
-      document.addEventListener('mousemove',mh);
-      document.addEventListener('mouseup',uh);
-      document.addEventListener('touchmove',tmh,{passive:false});
-      document.addEventListener('touchend',teh,{passive:false});
-
-      activeDrag={pId,sourceEl:el,ghost,mh,uh,tmh,teh};
-    }
-
-    function handleDropOn(drop,pId){
-      if(!drop) return;
-      const boardCell=drop.closest('[data-board-idx]');
-      const trayCell=drop.closest('[data-tray-idx]');
-      if(boardCell) tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));
-      else if(trayCell) returnToTray(pId,parseInt(trayCell.dataset.trayIdx));
-      else returnPieceToOrigin(pId);
-    }
-
-    function returnPieceToOrigin(pId){
-      const p=pieces[pId];
-      if(p.trayPos!=null) renderPieceInTray(pId,p.trayPos);
-      else if(p.boardPos!=null) renderPieceOnBoard(pId,p.boardPos);
-    }
-
-    function tryPlaceOnBoard(pId,bIdx){
-      const p=pieces[pId];
-      if(won||p.placed||blocked) return;
-
-      const occupantEl=boardSlots[bIdx].querySelector('.pz-piece');
-      if(occupantEl){
-        const occId=parseInt(occupantEl.dataset.pieceId);
-        if(pieces[occId].placed){ returnPieceToOrigin(pId); return; }
-        const freeTray=findFreeTraySlot(pId);
-        returnToTray(occId, freeTray);
-      }
-
-      if(bIdx===p.id){
-        if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; p.trayPos=null; }
-        if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; p.boardPos=null; }
-        p.placed=true;
-        p.boardPos=bIdx;
-        renderPieceOnBoard(pId,bIdx);
-        boardSlots[bIdx].classList.add('pz-correct-flash');
-        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);
-        checkWin();
-      } else {
-        if(errors>=MAX_ERRORS){ returnPieceToOrigin(pId); return; }
-        errors++;
-        buildErrBar();
-        boardSlots[bIdx].classList.add('pz-error-flash');
-        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);
-        returnPieceToOrigin(pId);
-        if(errors>=MAX_ERRORS){
-          blocked=true;
-          document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES — presiona NUEVO JUEGO';
-        }
-      }
-    }
-
-    function returnToTray(pId,preferredSlot){
-      const p=pieces[pId];
-      if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; }
-      if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; }
-      p.boardPos=null;
-      p.placed=false;
-      let slot=preferredSlot!=null?preferredSlot:findFreeTraySlot();
-      if(traySlots[slot] && traySlots[slot].querySelector('.pz-piece')){ slot=findFreeTraySlot(); }
-      p.trayPos=slot;
-      renderPieceInTray(pId,slot);
-    }
-
-    function findFreeTraySlot(excludePId){
-      for(let i=0;i<traySlots.length;i++){
-        if(!traySlots[i].querySelector('.pz-piece')) return i;
-      }
-      if(excludePId!=null){ const ep=pieces[excludePId]; if(ep.trayPos!=null) return ep.trayPos; }
-      return 0;
-    }
-
-    function checkWin(){
-      if(!pieces.every(p=>p.placed)) return;
-      won=true;
-      completedCount++;
-      document.getElementById('pz-completed').textContent=completedCount;
-      const user=getSession();
-      if(user) lbAddScore('puzzle',user,{score:completedCount,completados:completedCount,errores:errors});
-
-      const tempPool=[...imgPool];
-      if(!tempPool.length){
-        const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);
-        if(arr[0]===currentImgIdx) arr.push(arr.shift());
-        tempPool.push(...arr);
-      }
-      const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);
-      document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];
-
-      const banner=document.getElementById('pz-next-banner');
-      const countEl=document.getElementById('pz-next-countdown');
-      let count=3;
-      countEl.textContent=count;
-      banner.classList.add('show');
-      window._pzCountdown=setInterval(()=>{
-        count--;
-        if(count<=0){
-          clearInterval(window._pzCountdown);
-          window._pzCountdown=null;
-          banner.classList.remove('show');
-          buildGame();
-        } else {
-          countEl.textContent=count;
-        }
-      },1000);
-    }
-
-    document.getElementById('pz-restart-btn').addEventListener('click',()=>{
-      completedCount=0; imgPool=[]; currentImgIdx=-1;
-      buildGame();
-    });
-
-    document.getElementById('game-card-3').addEventListener('click',()=>{
-      completedCount=0; imgPool=[]; currentImgIdx=-1;
-      buildGame();
-      document.getElementById('modal-puzzle').classList.add('open');
-      // Registrar jugador en leaderboard al abrir el juego
-      const user=getSession();
-      if(user) lbRegisterPlayer('puzzle', user);
-    });
-
-    function closePuzzle(){
-      document.getElementById('modal-puzzle').classList.remove('open');
-      cancelActiveDrag();
-      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
-      document.getElementById('pz-next-banner').classList.remove('show');
-    }
+    document.getElementById('pz-restart-btn').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();});
+    document.getElementById('game-card-3').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();document.getElementById('modal-puzzle').classList.add('open');const user=getSession();if(user)lbRegisterPlayer('puzzle',user);});
+    function closePuzzle(){document.getElementById('modal-puzzle').classList.remove('open');cancelActiveDrag();if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');}
     document.getElementById('modal-puzzle-close').addEventListener('click',closePuzzle);
-    document.getElementById('modal-puzzle').addEventListener('click',(e)=>{
-      if(e.target===document.getElementById('modal-puzzle')) closePuzzle();
-    });
+    document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
   })();
   </script>
 </body>
