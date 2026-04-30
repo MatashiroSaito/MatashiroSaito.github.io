@@ -213,10 +213,13 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-ghost-drag{position:fixed;pointer-events:none;z-index:9999;border-radius:6px;opacity:0.85;transform:translate(-50%,-50%);background-size:cover;}
 
 /* ── LEADERBOARD ── */
-.modal-lb-inner{width:480px;max-width:92vw;}
+.modal-lb-inner{width:500px;max-width:92vw;}
 .lb-tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border-glow);border-radius:12px;overflow:hidden;}
 .lb-tab{flex:1;background:none;border:none;color:var(--text-muted);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:9px;cursor:pointer;transition:all 0.2s;}
 .lb-tab.active{background:linear-gradient(135deg,rgba(0,245,255,0.12),rgba(191,0,255,0.12));color:var(--neon-gold);}
+.lb-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:2.5rem;font-family:'Orbitron',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;}
+.lb-spinner{width:20px;height:20px;border:2px solid rgba(0,245,255,0.2);border-top-color:var(--neon-cyan);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 .lb-table{width:100%;border-collapse:collapse;}
 .lb-table th{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-glow);}
 .lb-table td{padding:10px 10px;font-size:14px;color:var(--text-main);border-bottom:1px solid rgba(0,245,255,0.06);font-family:'Rajdhani',sans-serif;font-weight:500;}
@@ -229,6 +232,10 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-score{font-family:'Orbitron',monospace;font-size:12px;color:var(--neon-cyan);text-align:right;}
 .lb-empty{text-align:center;font-family:'Orbitron',monospace;font-size:11px;color:var(--text-muted);padding:2rem;letter-spacing:2px;}
 .lb-me td{background:rgba(0,245,255,0.04);border-left:2px solid var(--neon-cyan);}
+.lb-refresh-row{display:flex;justify-content:flex-end;margin-bottom:0.8rem;}
+.lb-refresh-btn{background:none;border:1px solid var(--border-glow);color:var(--text-muted);border-radius:14px;padding:4px 12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
+.lb-refresh-btn:hover{border-color:var(--neon-cyan);color:var(--neon-cyan);}
+.lb-shared-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-purple);letter-spacing:1px;margin-top:1rem;opacity:0.7;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -354,7 +361,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     </div>
   </div>
 
-  <!-- MODAL AUTH (REGISTRO / LOGIN) -->
+  <!-- MODAL AUTH -->
   <div class="modal-overlay" id="modal-auth">
     <div class="modal modal-auth-inner">
       <button class="modal-close" id="modal-auth-close">X</button>
@@ -493,13 +500,17 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     <div class="modal modal-lb-inner">
       <button class="modal-close" id="modal-lb-close">X</button>
       <div class="game-title">LEADERBOARD</div>
-      <div class="game-subtitle">los mejores jugadores</div>
+      <div class="game-subtitle">ranking global de jugadores</div>
       <div class="lb-tabs">
         <button class="lb-tab active" data-game="num" onclick="lbSwitchTab('num')">NUMERO</button>
         <button class="lb-tab" data-game="memory" onclick="lbSwitchTab('memory')">MEMORY</button>
         <button class="lb-tab" data-game="puzzle" onclick="lbSwitchTab('puzzle')">PUZZLE</button>
       </div>
+      <div class="lb-refresh-row">
+        <button class="lb-refresh-btn" id="lb-refresh-btn">&#8635; ACTUALIZAR</button>
+      </div>
       <div id="lb-content"></div>
+      <div class="lb-shared-note">★ RANKING COMPARTIDO ENTRE TODOS LOS JUGADORES ★</div>
     </div>
   </div>
 
@@ -522,9 +533,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.querySelectorAll('.sidebar-item').forEach(item=>{item.addEventListener('click',function(){document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active');});});
 
   // ── SISTEMA DE USUARIOS (localStorage) ──
-  const STORAGE_KEY = 'kbros_users';
-  const SESSION_KEY = 'kbros_session';
-  function getUsers(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch(e){return {};}}
+  const STORAGE_KEY='kbros_users';
+  const SESSION_KEY='kbros_session';
+  function getUsers(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch(e){return{};}}
   function saveUsers(users){localStorage.setItem(STORAGE_KEY,JSON.stringify(users));}
   function getSession(){return localStorage.getItem(SESSION_KEY)||null;}
   function saveSession(name){localStorage.setItem(SESSION_KEY,name);}
@@ -544,33 +555,125 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.getElementById('nav-actions').addEventListener('click',e=>{if(e.target&&e.target.id==='btn-entrar')openAuth();});
   renderNav();
 
-  // ── LEADERBOARD ──
-  const LB_KEY = 'kbros_leaderboard';
-  function getLB(){try{return JSON.parse(localStorage.getItem(LB_KEY))||{num:{},memory:{},puzzle:{}};}catch(e){return{num:{},memory:{},puzzle:{}};}}
-  function saveLB(lb){localStorage.setItem(LB_KEY,JSON.stringify(lb));}
-  function lbAddScore(game,username,score){const lb=getLB();if(!lb[game])lb[game]={};if(lb[game][username]===undefined||score>lb[game][username]){lb[game][username]=score;saveLB(lb);}}
+  // ══════════════════════════════════════════════════════════════════
+  // ── LEADERBOARD COMPARTIDO (window.storage shared=true) ──────────
+  // Clave: "lb:{game}:{username_lower}"  →  valor numérico como string
+  // ══════════════════════════════════════════════════════════════════
   let lbCurrentTab='num';
-  function lbSwitchTab(game){lbCurrentTab=game;document.querySelectorAll('.lb-tab').forEach(t=>t.classList.toggle('active',t.dataset.game===game));lbRender(game);}
-  function lbRender(game){
-    const lb=getLB();const data=lb[game]||{};const session=getSession();
-    const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const content=document.getElementById('lb-content');
-    if(!sorted.length){content.innerHTML='<div class="lb-empty">SIN REGISTROS AUN<br><br>JUEGA PARA APARECER AQUI</div>';return;}
-    const labels={num:'INTENTOS RESTANTES',memory:'MOVIMIENTOS',puzzle:'COMPLETADOS'};
-    let html='<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th><th style="text-align:right">'+(labels[game]||'SCORE')+'</th></tr></thead><tbody>';
-    sorted.forEach(([name,score],i)=>{
-      const rankClass=i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest';
-      const rankLabel=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
-      const isMe=session&&name.toLowerCase()===session.toLowerCase();
-      html+='<tr class="'+(isMe?'lb-me':'')+'"><td class="lb-rank '+rankClass+'">'+rankLabel+'</td><td class="lb-name">'+name.toUpperCase()+(isMe?' ◀':'')+'</td><td class="lb-score">'+score+'</td></tr>';
-    });
-    html+='</tbody></table>';
-    content.innerHTML=html;
+
+  /**
+   * Guarda o actualiza el score de un jugador en el leaderboard compartido.
+   * Solo actualiza si el nuevo score es MEJOR que el anterior.
+   * num:    más intentos restantes = mejor
+   * memory: menos movimientos = mejor  (guardamos como negativo para invertir el sort)
+   * puzzle: más completados = mejor
+   */
+  async function lbAddScore(game, username, score) {
+    if (!username) return;
+    const key = 'lb:' + game + ':' + username.toLowerCase();
+    try {
+      // Para memory guardamos movimientos pero comparamos "menos es mejor"
+      // Para num y puzzle "más es mejor"
+      let storedVal = null;
+      try {
+        const existing = await window.storage.get(key, true);
+        storedVal = existing ? parseFloat(existing.value) : null;
+      } catch(e) { storedVal = null; }
+
+      let shouldSave = false;
+      if (storedVal === null) {
+        shouldSave = true;
+      } else if (game === 'memory') {
+        // menor cantidad de movimientos es mejor
+        shouldSave = score < storedVal;
+      } else {
+        // mayor score es mejor (num = intentos restantes, puzzle = completados)
+        shouldSave = score > storedVal;
+      }
+
+      if (shouldSave) {
+        await window.storage.set(key, String(score), true);
+      }
+    } catch(err) {
+      console.warn('lbAddScore error:', err);
+      // Fallback silencioso — el juego sigue funcionando igual
+    }
   }
-  function openLeaderboard(){lbRender(lbCurrentTab);document.getElementById('modal-leaderboard').classList.add('open');}
-  document.getElementById('btn-leaderboard').addEventListener('click',openLeaderboard);
-  document.getElementById('modal-lb-close').addEventListener('click',()=>document.getElementById('modal-leaderboard').classList.remove('open'));
-  document.getElementById('modal-leaderboard').addEventListener('click',e=>{if(e.target===document.getElementById('modal-leaderboard'))document.getElementById('modal-leaderboard').classList.remove('open');});
+
+  /**
+   * Carga y renderiza el leaderboard del juego indicado.
+   * Lee todas las claves "lb:{game}:*" del storage compartido.
+   */
+  async function lbRender(game) {
+    const content = document.getElementById('lb-content');
+    content.innerHTML = '<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
+
+    let entries = [];
+    try {
+      const prefix = 'lb:' + game + ':';
+      const result = await window.storage.list(prefix, true);
+      const keys = result ? result.keys : [];
+
+      // Leer todos los valores en paralelo
+      const reads = keys.map(k => window.storage.get(k, true).catch(() => null));
+      const values = await Promise.all(reads);
+
+      keys.forEach((k, i) => {
+        if (!values[i]) return;
+        const username = k.replace(prefix, '');
+        const score = parseFloat(values[i].value);
+        if (!isNaN(score)) entries.push({ username, score });
+      });
+    } catch(err) {
+      console.warn('lbRender error:', err);
+    }
+
+    // Ordenar: memory → menos movimientos primero; resto → más score primero
+    if (game === 'memory') {
+      entries.sort((a, b) => a.score - b.score);
+    } else {
+      entries.sort((a, b) => b.score - a.score);
+    }
+
+    const session = getSession();
+    const labels = { num: 'INTENTOS RESTANTES', memory: 'MOVIMIENTOS', puzzle: 'COMPLETADOS' };
+
+    if (!entries.length) {
+      content.innerHTML = '<div class="lb-empty">SIN REGISTROS AUN<br><br>SE EL PRIMERO EN JUGAR</div>';
+      return;
+    }
+
+    let html = '<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th><th style="text-align:right">' + (labels[game] || 'SCORE') + '</th></tr></thead><tbody>';
+    entries.slice(0, 10).forEach(({ username, score }, i) => {
+      const rankClass = i === 0 ? 'lb-rank-1' : i === 1 ? 'lb-rank-2' : i === 2 ? 'lb-rank-3' : 'lb-rank-rest';
+      const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      const isMe = session && username === session.toLowerCase();
+      const displayScore = score;
+      html += '<tr class="' + (isMe ? 'lb-me' : '') + '">'
+        + '<td class="lb-rank ' + rankClass + '">' + rankLabel + '</td>'
+        + '<td class="lb-name">' + username.toUpperCase() + (isMe ? ' ◀' : '') + '</td>'
+        + '<td class="lb-score">' + displayScore + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+    content.innerHTML = html;
+  }
+
+  function lbSwitchTab(game) {
+    lbCurrentTab = game;
+    document.querySelectorAll('.lb-tab').forEach(t => t.classList.toggle('active', t.dataset.game === game));
+    lbRender(game);
+  }
+
+  function openLeaderboard() {
+    document.getElementById('modal-leaderboard').classList.add('open');
+    lbRender(lbCurrentTab);
+  }
+
+  document.getElementById('btn-leaderboard').addEventListener('click', openLeaderboard);
+  document.getElementById('modal-lb-close').addEventListener('click', () => document.getElementById('modal-leaderboard').classList.remove('open'));
+  document.getElementById('modal-leaderboard').addEventListener('click', e => { if (e.target === document.getElementById('modal-leaderboard')) document.getElementById('modal-leaderboard').classList.remove('open'); });
+  document.getElementById('lb-refresh-btn').addEventListener('click', () => lbRender(lbCurrentTab));
 
   // ── ADIVINA EL NUMERO ──
   let secretNum,attemptsLeft,minRange,maxRange,gameOver;
