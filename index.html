@@ -238,6 +238,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-month-badge{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;color:var(--neon-purple);background:rgba(191,0,255,0.1);border:1px solid rgba(191,0,255,0.3);border-radius:10px;padding:3px 10px;}
 .lb-shared-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-purple);letter-spacing:1px;margin-top:1rem;opacity:0.7;}
 .lb-reset-note{text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-top:0.4rem;opacity:0.5;}
+.lb-played-badge{font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;padding:2px 6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-left:6px;vertical-align:middle;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -562,153 +563,207 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ══════════════════════════════════════════════════════════════════
   // ── LEADERBOARD COMPARTIDO — RENOVACIÓN MENSUAL ───────────────────
   //
-  // La clave incluye el año y mes actual: "lb:{game}:{YYYY-MM}:{user}"
-  // Al cambiar de mes las claves del mes anterior no coinciden con el
-  // prefijo actual, por lo que el ranking arranca limpio automáticamente.
-  // No se necesita borrar nada manualmente.
+  // Claves: "lb_GAME_YYYYMM_USERNAME"
+  // Todos los jugadores que abran un juego quedan registrados.
+  // Al cambiar de mes el prefijo cambia y el ranking arranca limpio.
   // ══════════════════════════════════════════════════════════════════
 
-  /** Devuelve la cadena del mes actual en formato "YYYY-MM" */
-  function getMonthKey() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    return y + '-' + m;
+  function getMonthKey(){
+    const now=new Date();
+    return now.getFullYear()+String(now.getMonth()+1).padStart(2,'0');
   }
 
-  /** Nombre legible del mes actual para mostrar en la UI, ej: "Mayo 2025" */
-  function getMonthLabel() {
-    const now = new Date();
-    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    return meses[now.getMonth()] + ' ' + now.getFullYear();
+  function getMonthLabel(){
+    const now=new Date();
+    const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return meses[now.getMonth()]+' '+now.getFullYear();
   }
 
-  /** Actualiza el badge del mes en el modal de leaderboard */
-  function updateMonthBadge() {
-    const el = document.getElementById('lb-month-badge');
-    if (el) el.textContent = '📅 ' + getMonthLabel().toUpperCase();
+  function updateMonthBadge(){
+    const el=document.getElementById('lb-month-badge');
+    if(el) el.textContent='📅 '+getMonthLabel().toUpperCase();
   }
-
-  let lbCurrentTab = 'num';
 
   /**
-   * Guarda o actualiza el score de un jugador en el leaderboard compartido.
-   * La clave incluye el mes actual → los datos expiran naturalmente al mes siguiente.
-   * Solo actualiza si el nuevo score es MEJOR que el registrado este mes.
-   *   num:    más intentos restantes = mejor
-   *   memory: menos movimientos = mejor
-   *   puzzle: más completados = mejor
+   * Construye la clave de storage para un jugador/juego/mes.
+   * Usa guion bajo como separador para evitar problemas con ':' en algunos entornos.
+   * Formato: "lb_GAME_YYYYMM_username"
    */
-  async function lbAddScore(game, username, score) {
-    if (!username) return;
-    const month = getMonthKey();
-    const key = 'lb:' + game + ':' + month + ':' + username.toLowerCase();
-    try {
-      let storedVal = null;
-      try {
-        const existing = await window.storage.get(key, true);
-        storedVal = existing ? parseFloat(existing.value) : null;
-      } catch(e) { storedVal = null; }
+  function lbKey(game, username){
+    return 'lb_'+game+'_'+getMonthKey()+'_'+username.toLowerCase();
+  }
 
-      let shouldSave = false;
-      if (storedVal === null) {
-        shouldSave = true;
-      } else if (game === 'memory') {
-        shouldSave = score < storedVal;   // menos movimientos = mejor
+  /**
+   * Registra o actualiza el score de un jugador en el leaderboard compartido.
+   * - Si el jugador nunca ha jugado este mes, guarda el score directamente.
+   * - Solo sobreescribe si el nuevo score es MEJOR:
+   *     num    → más intentos restantes = mejor (mayor)
+   *     memory → menos movimientos     = mejor (menor)
+   *     puzzle → más completados       = mejor (mayor)
+   */
+  async function lbAddScore(game, username, score){
+    if(!username) return;
+    const key=lbKey(game, username);
+    try {
+      let storedVal=null;
+      try {
+        const existing=await window.storage.get(key, true);
+        storedVal=existing ? parseFloat(existing.value) : null;
+      } catch(e){ storedVal=null; }
+
+      let shouldSave=false;
+      if(storedVal===null){
+        shouldSave=true;
+      } else if(game==='memory'){
+        shouldSave=score<storedVal;   // menos movimientos = mejor
       } else {
-        shouldSave = score > storedVal;   // más puntaje = mejor
+        shouldSave=score>storedVal;   // más = mejor
       }
 
-      if (shouldSave) {
+      if(shouldSave){
         await window.storage.set(key, String(score), true);
       }
-    } catch(err) {
+    } catch(err){
       console.warn('lbAddScore error:', err);
     }
   }
 
   /**
-   * Carga y renderiza el leaderboard del juego y MES indicados.
-   * Lee todas las claves "lb:{game}:{YYYY-MM}:*" del storage compartido.
+   * Registra que un usuario "jugó" este juego este mes.
+   * Si aún no tiene score, guarda 0 para que aparezca en el ranking.
+   * Esto asegura que todos los que abran el juego sean visibles.
    */
-  async function lbRender(game) {
-    updateMonthBadge();
-    const content = document.getElementById('lb-content');
-    content.innerHTML = '<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
-
-    const month = getMonthKey();
-    let entries = [];
+  async function lbRegisterPlayer(game, username){
+    if(!username) return;
+    const key=lbKey(game, username);
     try {
-      const prefix = 'lb:' + game + ':' + month + ':';
-      const result = await window.storage.list(prefix, true);
-      const keys = result ? result.keys : [];
+      let existing=null;
+      try { existing=await window.storage.get(key, true); } catch(e){}
+      if(!existing){
+        await window.storage.set(key, '0', true);
+      }
+    } catch(err){
+      console.warn('lbRegisterPlayer error:', err);
+    }
+  }
 
-      const reads = keys.map(k => window.storage.get(k, true).catch(() => null));
-      const values = await Promise.all(reads);
+  /**
+   * Carga y renderiza el leaderboard del juego y mes actual.
+   * Lee todas las claves con prefijo "lb_GAME_YYYYMM_" del storage compartido.
+   */
+  async function lbRender(game){
+    updateMonthBadge();
+    const content=document.getElementById('lb-content');
+    content.innerHTML='<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
 
-      keys.forEach((k, i) => {
-        if (!values[i]) return;
-        const username = k.replace(prefix, '');
-        const score = parseFloat(values[i].value);
-        if (!isNaN(score)) entries.push({ username, score });
+    const month=getMonthKey();
+    const prefix='lb_'+game+'_'+month+'_';
+    let entries=[];
+
+    try {
+      const result=await window.storage.list(prefix, true);
+      const keys=result ? result.keys : [];
+
+      const reads=keys.map(k=>window.storage.get(k, true).catch(()=>null));
+      const values=await Promise.all(reads);
+
+      keys.forEach((k, i)=>{
+        if(!values[i]) return;
+        // Extraer username: todo lo que viene después del prefijo
+        const username=k.slice(prefix.length);
+        const score=parseFloat(values[i].value);
+        if(username && !isNaN(score)) entries.push({username, score});
       });
-    } catch(err) {
+    } catch(err){
       console.warn('lbRender error:', err);
     }
 
     // Ordenar: memory → menos movimientos primero; resto → más score primero
-    if (game === 'memory') {
-      entries.sort((a, b) => a.score - b.score);
+    if(game==='memory'){
+      entries.sort((a,b)=>a.score-b.score);
     } else {
-      entries.sort((a, b) => b.score - a.score);
+      entries.sort((a,b)=>b.score-a.score);
     }
 
-    const session = getSession();
-    const labels = { num: 'INTENTOS RESTANTES', memory: 'MOVIMIENTOS', puzzle: 'COMPLETADOS' };
+    const session=getSession();
+    const scoreLabels={num:'INTENTOS', memory:'MOVIMIENTOS', puzzle:'COMPLETADOS'};
+    const scoreLabel=scoreLabels[game]||'SCORE';
 
-    if (!entries.length) {
-      content.innerHTML = '<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
+    if(!entries.length){
+      content.innerHTML='<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
       return;
     }
 
-    let html = '<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th><th style="text-align:right">' + (labels[game] || 'SCORE') + '</th></tr></thead><tbody>';
-    entries.slice(0, 10).forEach(({ username, score }, i) => {
-      const rankClass = i === 0 ? 'lb-rank-1' : i === 1 ? 'lb-rank-2' : i === 2 ? 'lb-rank-3' : 'lb-rank-rest';
-      const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-      const isMe = session && username === session.toLowerCase();
-      html += '<tr class="' + (isMe ? 'lb-me' : '') + '">'
-        + '<td class="lb-rank ' + rankClass + '">' + rankLabel + '</td>'
-        + '<td class="lb-name">' + username.toUpperCase() + (isMe ? ' ◀' : '') + '</td>'
-        + '<td class="lb-score">' + score + '</td>'
-        + '</tr>';
+    // Para memory: los que tienen 0 van al final (no han ganado aún)
+    // Para num/puzzle: los que tienen 0 van al final también
+    let ranked, unranked;
+    if(game==='memory'){
+      ranked=entries.filter(e=>e.score>0);
+      unranked=entries.filter(e=>e.score===0);
+    } else {
+      ranked=entries.filter(e=>e.score>0);
+      unranked=entries.filter(e=>e.score===0);
+    }
+
+    const allEntries=[...ranked, ...unranked];
+
+    let html='<table class="lb-table"><thead><tr>'
+      +'<th>#</th><th>JUGADOR</th><th style="text-align:right">'+scoreLabel+'</th>'
+      +'</tr></thead><tbody>';
+
+    allEntries.slice(0,15).forEach(({username, score}, i)=>{
+      const inRanked=i<ranked.length;
+      const rankClass=inRanked?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
+      const rankLabel=inRanked?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
+      const isMe=session && username===session.toLowerCase();
+      const scoreDisplay=score>0?score:'<span style="color:var(--text-muted);font-size:10px">jugando</span>';
+      html+='<tr class="'+(isMe?'lb-me':'')+'">'
+        +'<td class="lb-rank '+rankClass+'">'+rankLabel+'</td>'
+        +'<td class="lb-name">'+username.toUpperCase()+(isMe?' ◀':'')+' '
+        +(score===0?'<span class="lb-played-badge">SIN SCORE</span>':'')+'</td>'
+        +'<td class="lb-score">'+scoreDisplay+'</td>'
+        +'</tr>';
     });
-    html += '</tbody></table>';
-    content.innerHTML = html;
+
+    html+='</tbody></table>';
+    if(allEntries.length>15){
+      html+='<div style="text-align:center;font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);margin-top:0.8rem;letter-spacing:1px;">+ '+(allEntries.length-15)+' JUGADORES MÁS</div>';
+    }
+    content.innerHTML=html;
   }
 
-  function lbSwitchTab(game) {
-    lbCurrentTab = game;
-    document.querySelectorAll('.lb-tab').forEach(t => t.classList.toggle('active', t.dataset.game === game));
+  let lbCurrentTab='num';
+
+  function lbSwitchTab(game){
+    lbCurrentTab=game;
+    document.querySelectorAll('.lb-tab').forEach(t=>t.classList.toggle('active',t.dataset.game===game));
     lbRender(game);
   }
 
-  function openLeaderboard() {
+  function openLeaderboard(){
     document.getElementById('modal-leaderboard').classList.add('open');
     updateMonthBadge();
     lbRender(lbCurrentTab);
   }
 
-  document.getElementById('btn-leaderboard').addEventListener('click', openLeaderboard);
-  document.getElementById('modal-lb-close').addEventListener('click', () => document.getElementById('modal-leaderboard').classList.remove('open'));
-  document.getElementById('modal-leaderboard').addEventListener('click', e => { if (e.target === document.getElementById('modal-leaderboard')) document.getElementById('modal-leaderboard').classList.remove('open'); });
-  document.getElementById('lb-refresh-btn').addEventListener('click', () => lbRender(lbCurrentTab));
+  document.getElementById('btn-leaderboard').addEventListener('click',openLeaderboard);
+  document.getElementById('modal-lb-close').addEventListener('click',()=>document.getElementById('modal-leaderboard').classList.remove('open'));
+  document.getElementById('modal-leaderboard').addEventListener('click',e=>{if(e.target===document.getElementById('modal-leaderboard'))document.getElementById('modal-leaderboard').classList.remove('open');});
+  document.getElementById('lb-refresh-btn').addEventListener('click',()=>lbRender(lbCurrentTab));
 
   // ── ADIVINA EL NUMERO ──
   let secretNum,attemptsLeft,minRange,maxRange,gameOver;
   function startGame(){secretNum=Math.floor(Math.random()*100)+1;attemptsLeft=5;minRange=1;maxRange=100;gameOver=false;document.getElementById('hint-display').textContent='?';document.getElementById('hint-text').textContent='Piensa un numero entre 1 y 100';document.getElementById('range-hint').textContent='RANGO: 1 - 100';document.getElementById('history').innerHTML='';document.getElementById('result-msg').textContent='';document.getElementById('result-msg').className='result-msg';document.getElementById('guess-input').value='';document.getElementById('guess-input').disabled=false;document.getElementById('guess-btn').disabled=false;document.getElementById('restart-btn').classList.remove('show');for(let i=1;i<=5;i++){const p=document.getElementById('pip-'+i);p.classList.remove('used','wrong');}}
   function doGuess(){if(gameOver)return;const input=document.getElementById('guess-input');const val=parseInt(input.value);if(isNaN(val)||val<1||val>100){input.classList.add('shake');setTimeout(()=>input.classList.remove('shake'),300);return;}const pipIndex=6-attemptsLeft;const pip=document.getElementById('pip-'+pipIndex);if(val===secretNum){pip.classList.add('used');document.getElementById('hint-display').textContent=val;document.getElementById('hint-text').textContent='';document.getElementById('result-msg').textContent='CORRECTO!';document.getElementById('result-msg').className='result-msg win';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;const user=getSession();if(user)lbAddScore('num',user,attemptsLeft);return;}attemptsLeft--;pip.classList.add('wrong');const chip=document.createElement('div');if(val>secretNum){maxRange=Math.min(maxRange,val-1);chip.className='history-chip chip-high';chip.innerHTML=val+' v';document.getElementById('hint-display').textContent='v';document.getElementById('hint-text').textContent='Demasiado alto, baja un poco';}else{minRange=Math.max(minRange,val+1);chip.className='history-chip chip-low';chip.innerHTML=val+' ^';document.getElementById('hint-display').textContent='^';document.getElementById('hint-text').textContent='Demasiado bajo, sube un poco';}document.getElementById('history').appendChild(chip);document.getElementById('range-hint').textContent='RANGO: '+minRange+' - '+maxRange;input.value='';if(attemptsLeft===0){document.getElementById('result-msg').textContent='ERA EL '+secretNum;document.getElementById('result-msg').className='result-msg lose';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;}}
-  document.getElementById('game-card-1').addEventListener('click',()=>{startGame();document.getElementById('modal').classList.add('open');setTimeout(()=>document.getElementById('guess-input').focus(),300);});
+
+  document.getElementById('game-card-1').addEventListener('click',()=>{
+    startGame();
+    document.getElementById('modal').classList.add('open');
+    setTimeout(()=>document.getElementById('guess-input').focus(),300);
+    // Registrar jugador en leaderboard al abrir el juego
+    const user=getSession();
+    if(user) lbRegisterPlayer('num', user);
+  });
   document.getElementById('modal-close').addEventListener('click',()=>document.getElementById('modal').classList.remove('open'));
   document.getElementById('modal').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.remove('open');});
   document.getElementById('guess-input').addEventListener('keydown',(e)=>{if(e.key==='Enter')doGuess();});
@@ -732,7 +787,14 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   function mgCheckMatch(){const[a,b]=mgFlipped;const allCards=document.querySelectorAll('#mg-grid .mg-card');if(mgCards[a].src===mgCards[b].src){mgMatched.push(a,b);const count=mgMatched.length/2;document.getElementById('mg-pairs-found').innerHTML=count+'/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-dot-'+(count-1)).classList.add('mg-dot-done');allCards[a].classList.add('mg-matched');allCards[b].classList.add('mg-matched');setTimeout(()=>{allCards[a].classList.add('mg-pop');allCards[b].classList.add('mg-pop');},50);setTimeout(()=>{allCards[a].classList.remove('mg-pop');allCards[b].classList.remove('mg-pop');},400);mgFlipped=[];mgLock=false;if(mgMatched.length===mgCards.length){clearInterval(mgTimerInterval);const m=Math.floor(mgSeconds/60),s=mgSeconds%60;setTimeout(()=>{const msg=document.getElementById('mg-message');msg.textContent='GANASTE! '+mgMoves+' mov - '+m+':'+String(s).padStart(2,'0');msg.className='mg-message mg-win';const user=getSession();if(user)lbAddScore('memory',user,mgMoves);},400);}}else{setTimeout(()=>{allCards[a].classList.add('mg-shake');allCards[b].classList.add('mg-shake');},100);setTimeout(()=>{allCards[a].classList.remove('mg-flipped','mg-shake');allCards[b].classList.remove('mg-flipped','mg-shake');mgFlipped=[];mgLock=false;},900);}}
   document.querySelectorAll('.mg-diff-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.mg-diff-btn').forEach(b=>b.classList.remove('mg-diff-active'));btn.classList.add('mg-diff-active');mgPairs=parseInt(btn.dataset.pairs);mgInit();});});
   document.getElementById('mg-restart-btn').addEventListener('click',mgInit);
-  document.getElementById('game-card-2').addEventListener('click',()=>{mgInit();document.getElementById('modal-memory').classList.add('open');});
+
+  document.getElementById('game-card-2').addEventListener('click',()=>{
+    mgInit();
+    document.getElementById('modal-memory').classList.add('open');
+    // Registrar jugador en leaderboard al abrir el juego
+    const user=getSession();
+    if(user) lbRegisterPlayer('memory', user);
+  });
   document.getElementById('modal-memory-close').addEventListener('click',()=>{document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);});
   document.getElementById('modal-memory').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-memory')){document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);}});
 
@@ -742,8 +804,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     const GRID_N=4, MAX_ERRORS=5, SZ=68;
     let errors=0, won=false, completedCount=0, blocked=false;
     let pieces=[], boardSlots=[], traySlots=[];
-    // drag state
-    let activeDrag=null; // {pId, sourceEl, ghost, mh, uh, tmh, teh}
+    let activeDrag=null;
     let imgPool=[], currentImgIdx=-1;
 
     function refillPool(){
@@ -763,9 +824,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     }
 
     function buildGame(){
-      // Cancel any running countdown
       if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
-      // Cancel any active drag cleanly
       cancelActiveDrag();
       document.getElementById('pz-next-banner').classList.remove('show');
       errors=0; won=false; blocked=false;
@@ -789,7 +848,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       const area=document.getElementById('pz-game-area');
       area.innerHTML='';
 
-      // Build board
       const boardWrap=document.createElement('div');
       const board=document.createElement('div');
       board.className='pz-board';
@@ -807,7 +865,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       boardWrap.appendChild(board);
       area.appendChild(boardWrap);
 
-      // Build tray
       const tWrap=document.createElement('div');
       tWrap.className='pz-tray-wrap';
       const tLbl=document.createElement('div');
@@ -830,7 +887,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       tWrap.appendChild(tray);
       area.appendChild(tWrap);
 
-      // Place pieces in tray
       shuffled.forEach((pieceId,trayPos)=>{
         pieces[pieceId].trayPos=trayPos;
         renderPieceInTray(pieceId,trayPos);
@@ -863,8 +919,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       cell.appendChild(el);
     }
 
-    // ── DRAG ──────────────────────────────────────────────────────────
-
     function cancelActiveDrag(){
       if(!activeDrag) return;
       const {sourceEl,ghost,mh,uh,tmh,teh}=activeDrag;
@@ -872,7 +926,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       document.removeEventListener('mouseup',uh);
       document.removeEventListener('touchmove',tmh);
       document.removeEventListener('touchend',teh);
-      document.removeEventListener('mouseleave',mh); // safety
       if(ghost && ghost.parentNode) ghost.remove();
       if(sourceEl) sourceEl.classList.remove('pz-dragging');
       activeDrag=null;
@@ -893,13 +946,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     }
 
     function startDrag(cx,cy,pId,el){
-      // Cancel any leftover drag
       cancelActiveDrag();
-
       const p=pieces[pId];
       el.classList.add('pz-dragging');
-
-      // Ghost: centered under cursor using transform
       const ghost=document.createElement('div');
       ghost.className='pz-ghost-drag';
       ghost.style.width=SZ+'px';
@@ -907,26 +956,15 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       ghost.style.backgroundImage='url(\''+p.bg+'\')';
       ghost.style.backgroundSize=p.bgSize;
       ghost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';
-      // Override the CSS transform to center on cursor:
       ghost.style.transform='translate(-50%,-50%)';
       ghost.style.left=cx+'px';
       ghost.style.top=cy+'px';
       document.body.appendChild(ghost);
 
-      function onMove(ex,ey){
-        ghost.style.left=ex+'px';
-        ghost.style.top=ey+'px';
-      }
-
-      function onEnd(ex,ey){
-        cancelActiveDrag();
-        // Find drop target (ghost is pointer-events:none so elementFromPoint works)
-        const drop=document.elementFromPoint(ex,ey);
-        handleDropOn(drop,pId);
-      }
+      function onMove(ex,ey){ ghost.style.left=ex+'px'; ghost.style.top=ey+'px'; }
+      function onEnd(ex,ey){ cancelActiveDrag(); const drop=document.elementFromPoint(ex,ey); handleDropOn(drop,pId); }
 
       const mh=e=>onMove(e.clientX,e.clientY);
-      // FIX: mouseleave on window also ends drag so ghost doesn't get stuck
       const uh=e=>onEnd(e.clientX,e.clientY);
       const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};
       const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};
@@ -939,20 +977,17 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       activeDrag={pId,sourceEl:el,ghost,mh,uh,tmh,teh};
     }
 
-    // ── DROP LOGIC ────────────────────────────────────────────────────
-
     function handleDropOn(drop,pId){
       if(!drop) return;
       const boardCell=drop.closest('[data-board-idx]');
       const trayCell=drop.closest('[data-tray-idx]');
       if(boardCell) tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));
       else if(trayCell) returnToTray(pId,parseInt(trayCell.dataset.trayIdx));
-      else returnPieceToOrigin(pId); // dropped outside any valid zone
+      else returnPieceToOrigin(pId);
     }
 
     function returnPieceToOrigin(pId){
       const p=pieces[pId];
-      // Already tracked — just re-render in its current slot
       if(p.trayPos!=null) renderPieceInTray(pId,p.trayPos);
       else if(p.boardPos!=null) renderPieceOnBoard(pId,p.boardPos);
     }
@@ -964,19 +999,12 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       const occupantEl=boardSlots[bIdx].querySelector('.pz-piece');
       if(occupantEl){
         const occId=parseInt(occupantEl.dataset.pieceId);
-        if(pieces[occId].placed) {
-          // Can't displace a locked piece — return dragged piece to origin
-          returnPieceToOrigin(pId);
-          return;
-        }
-        // Swap occupant back to a free tray slot (NOT the dragged piece's slot,
-        // because we're about to vacate it only if placement is correct)
-        const freeTray=findFreeTraySlot(pId); // exclude pId's current trayPos
+        if(pieces[occId].placed){ returnPieceToOrigin(pId); return; }
+        const freeTray=findFreeTraySlot(pId);
         returnToTray(occId, freeTray);
       }
 
       if(bIdx===p.id){
-        // ✅ Correct placement
         if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; p.trayPos=null; }
         if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; p.boardPos=null; }
         p.placed=true;
@@ -986,7 +1014,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
         setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);
         checkWin();
       } else {
-        // ❌ Wrong placement
         if(errors>=MAX_ERRORS){ returnPieceToOrigin(pId); return; }
         errors++;
         buildErrBar();
@@ -1002,35 +1029,22 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 
     function returnToTray(pId,preferredSlot){
       const p=pieces[pId];
-      // Vacate current locations
       if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; }
       if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; }
       p.boardPos=null;
       p.placed=false;
-
-      // Find a valid slot
       let slot=preferredSlot!=null?preferredSlot:findFreeTraySlot();
-      // If preferred slot is taken by someone else, find a free one
-      if(traySlots[slot] && traySlots[slot].querySelector('.pz-piece')){
-        slot=findFreeTraySlot();
-      }
+      if(traySlots[slot] && traySlots[slot].querySelector('.pz-piece')){ slot=findFreeTraySlot(); }
       p.trayPos=slot;
       renderPieceInTray(pId,slot);
     }
 
-    // FIX: returns -1 if no free slot (caller must handle), never blindly returns 0
     function findFreeTraySlot(excludePId){
-      // First pass: find a genuinely empty cell
       for(let i=0;i<traySlots.length;i++){
         if(!traySlots[i].querySelector('.pz-piece')) return i;
       }
-      // Fallback: find a slot occupied only by the piece being displaced
-      // (This shouldn't happen in normal gameplay but is a safety net)
-      if(excludePId!=null){
-        const ep=pieces[excludePId];
-        if(ep.trayPos!=null) return ep.trayPos;
-      }
-      return 0; // absolute last resort
+      if(excludePId!=null){ const ep=pieces[excludePId]; if(ep.trayPos!=null) return ep.trayPos; }
+      return 0;
     }
 
     function checkWin(){
@@ -1041,7 +1055,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       const user=getSession();
       if(user) lbAddScore('puzzle',user,completedCount);
 
-      // Pick next image preview from the remaining pool (without consuming it)
       const tempPool=[...imgPool];
       if(!tempPool.length){
         const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);
@@ -1073,11 +1086,16 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       completedCount=0; imgPool=[]; currentImgIdx=-1;
       buildGame();
     });
+
     document.getElementById('game-card-3').addEventListener('click',()=>{
       completedCount=0; imgPool=[]; currentImgIdx=-1;
       buildGame();
       document.getElementById('modal-puzzle').classList.add('open');
+      // Registrar jugador en leaderboard al abrir el juego
+      const user=getSession();
+      if(user) lbRegisterPlayer('puzzle', user);
     });
+
     function closePuzzle(){
       document.getElementById('modal-puzzle').classList.remove('open');
       cancelActiveDrag();
