@@ -133,8 +133,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .auth-msg{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;text-align:center;min-height:18px;padding:4px 0;}
 .auth-msg.error{color:var(--neon-pink);}
 .auth-msg.success{color:var(--neon-cyan);}
-.auth-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(0,245,255,0.15),transparent);margin:4px 0;}
-.auth-info{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.5;}
 .modal-memory-inner{width:660px;max-width:96vw;}
 .mg-diff-row{display:flex;justify-content:center;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap;}
 .mg-diff-btn{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;padding:5px 14px;border-radius:14px;cursor:pointer;transition:all 0.2s;background:none;color:var(--text-muted);border:1px solid var(--border-glow);}
@@ -217,9 +215,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border-glow);border-radius:12px;overflow:hidden;}
 .lb-tab{flex:1;background:none;border:none;color:var(--text-muted);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:9px;cursor:pointer;transition:all 0.2s;}
 .lb-tab.active{background:linear-gradient(135deg,rgba(0,245,255,0.12),rgba(191,0,255,0.12));color:var(--neon-gold);}
-.lb-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:2.5rem;font-family:'Orbitron',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;}
-.lb-spinner{width:20px;height:20px;border:2px solid rgba(0,245,255,0.2);border-top-color:var(--neon-cyan);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
 .lb-table{width:100%;border-collapse:collapse;}
 .lb-table th{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-glow);}
 .lb-table td{padding:10px 10px;font-size:14px;color:var(--text-main);border-bottom:1px solid rgba(0,245,255,0.06);font-family:'Rajdhani',sans-serif;font-weight:500;}
@@ -515,7 +510,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
         <button class="lb-refresh-btn" id="lb-refresh-btn">&#8635; ACTUALIZAR</button>
       </div>
       <div id="lb-content"></div>
-      <div class="lb-shared-note">★ RANKING COMPARTIDO ENTRE TODOS LOS JUGADORES ★</div>
+      <div class="lb-shared-note">★ RANKING LOCAL — GUARDADO EN ESTE NAVEGADOR ★</div>
       <div class="lb-reset-note">↻ EL RANKING SE REINICIA AL INICIO DE CADA MES</div>
     </div>
   </div>
@@ -538,7 +533,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ── SIDEBAR ──
   document.querySelectorAll('.sidebar-item').forEach(item=>{item.addEventListener('click',function(){document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active');});});
 
-  // ── SISTEMA DE USUARIOS (localStorage) ──
+  // ── SISTEMA DE USUARIOS ──
   const STORAGE_KEY='kbros_users';
   const SESSION_KEY='kbros_session';
   function getUsers(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch(e){return{};}}
@@ -562,12 +557,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   renderNav();
 
   // ══════════════════════════════════════════════════════════════════
-  // ── LEADERBOARD COMPARTIDO — RENOVACIÓN MENSUAL ───────────────────
-  //
-  // • Claves: "lb_GAME_YYYYMM_USERNAME" (storage compartido)
-  // • Si el lb está vacío este mes → siembra datos de muestra automáticamente
-  // • El 1er día del mes, entre 00:00 y 00:03 → muestra banner de MANTENIMIENTO
-  //   con cuenta regresiva en vivo; al llegar a 0 recarga el ranking fresco.
+  // ── LEADERBOARD — localStorage (funciona siempre, sin backend) ───
   // ══════════════════════════════════════════════════════════════════
 
   function getMonthKey(){
@@ -586,60 +576,35 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     if(el) el.textContent='📅 '+getMonthLabel().toUpperCase();
   }
 
-  /** ¿Estamos en la ventana de mantenimiento de inicio de mes?
-   *  Día 1 del mes, entre 00:00:00 y 00:02:59 (3 minutos) */
-  function isMaintenanceWindow(){
-    const now=new Date();
-    if(now.getDate()!==1) return false;
-    const secsFromMidnight=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
-    return secsFromMidnight<180;
-  }
-
-  /** Segundos que faltan para salir del mantenimiento */
-  function maintenanceSecondsLeft(){
-    const now=new Date();
-    const secsFromMidnight=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
-    return Math.max(0,180-secsFromMidnight);
-  }
-
+  // Clave de localStorage para un jugador/juego/mes
   function lbKey(game,username){
     return 'lb_'+game+'_'+getMonthKey()+'_'+username.toLowerCase();
   }
 
-  async function lbAddScore(game,username,data){
+  // Guarda score solo si mejora el anterior
+  function lbAddScore(game,username,data){
     if(!username) return;
     const key=lbKey(game,username);
-    const score=typeof data==='object'?data.score:data;
-    const payload=typeof data==='object'?data:{score};
-    try {
-      let storedScore=null;
-      try {
-        const existing=await window.storage.get(key,true);
-        if(existing){
-          try{storedScore=JSON.parse(existing.value).score;}catch(e){storedScore=parseFloat(existing.value);}
-        }
-      } catch(e){}
-      let shouldSave=false;
-      if(storedScore===null){shouldSave=true;}
-      else if(game==='memory'){shouldSave=score<storedScore;}
-      else{shouldSave=score>storedScore;}
-      if(shouldSave) await window.storage.set(key,JSON.stringify(payload),true);
-    } catch(err){console.warn('lbAddScore error:',err);}
+    const raw=localStorage.getItem(key);
+    let storedScore=null;
+    if(raw){try{storedScore=JSON.parse(raw).score;}catch(e){storedScore=parseFloat(raw)||null;}}
+    let shouldSave=false;
+    if(storedScore===null){shouldSave=true;}
+    else if(game==='memory'){shouldSave=data.score>0&&data.score<storedScore;}
+    else{shouldSave=data.score>storedScore;}
+    if(shouldSave) localStorage.setItem(key,JSON.stringify(data));
   }
 
-  async function lbRegisterPlayer(game,username){
+  // Registra jugador con score 0 si no tiene entrada este mes
+  function lbRegisterPlayer(game,username){
     if(!username) return;
     const key=lbKey(game,username);
-    try {
-      let existing=null;
-      try{existing=await window.storage.get(key,true);}catch(e){}
-      if(!existing) await window.storage.set(key,JSON.stringify({score:0}),true);
-    } catch(err){console.warn('lbRegisterPlayer error:',err);}
+    if(!localStorage.getItem(key)){
+      localStorage.setItem(key,JSON.stringify({score:0}));
+    }
   }
 
-  // ── DATOS DE MUESTRA (seed) ────────────────────────────────────────
-  // Se insertan automáticamente si el leaderboard de este mes está vacío.
-  // Así el ranking nunca aparece en blanco al inicio del mes.
+  // Datos de muestra — se insertan si el leaderboard del mes está vacío
   const LB_SEED={
     num:[
       {username:'Kbros',     score:5,intentosRestantes:5,intentosUsados:0},
@@ -667,118 +632,112 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     ]
   };
 
-  // Conjunto de usernames que son seed (para marcarlos visualmente)
   const SEED_USERS=new Set(['kbros','neonghost','starlord99','cyberkid','astropunk','voidwalker']);
 
-  /** Siembra datos de muestra si el leaderboard de este mes está vacío */
-  async function lbEnsureSeed(game){
+  // Siembra datos de muestra si este mes no tiene ninguna entrada
+  function lbEnsureSeed(game){
     const month=getMonthKey();
     const prefix='lb_'+game+'_'+month+'_';
-    try {
-      const result=await window.storage.list(prefix,true);
-      const keys=result?result.keys:[];
-      if(!keys.length){
-        const entries=LB_SEED[game]||[];
-        for(const e of entries){
-          const key=prefix+e.username.toLowerCase();
-          await window.storage.set(key,JSON.stringify(e),true);
+    // Revisar si ya existe al menos 1 clave de este juego/mes
+    const exists=Object.keys(localStorage).some(k=>k.startsWith(prefix));
+    if(!exists){
+      const entries=LB_SEED[game]||[];
+      entries.forEach(e=>{
+        const key=prefix+e.username.toLowerCase();
+        if(!localStorage.getItem(key)){
+          localStorage.setItem(key,JSON.stringify(e));
         }
-      }
-    } catch(err){console.warn('lbEnsureSeed error:',err);}
+      });
+    }
   }
 
-  // ── RENDER PRINCIPAL ───────────────────────────────────────────────
-  async function lbRender(game){
-    updateMonthBadge();
-    const content=document.getElementById('lb-content');
-
-    // VENTANA DE MANTENIMIENTO (primeros 3 min del mes)
-    if(isMaintenanceWindow()){
-      const secs=maintenanceSecondsLeft();
-      const m=Math.floor(secs/60);
-      const s=String(secs%60).padStart(2,'0');
-      content.innerHTML=
-        '<div style="text-align:center;padding:2rem 1rem;">'+
-        '<div style="font-family:Orbitron,monospace;font-size:1.5rem;font-weight:900;color:var(--neon-gold);letter-spacing:3px;margin-bottom:0.6rem;animation:pulse 1s infinite">⚙ REINICIANDO RANKING ⚙</div>'+
-        '<div style="font-family:Orbitron,monospace;font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:1.4rem;">NUEVO MES · NUEVA OPORTUNIDAD · EL RANKING SE ESTÁ LIMPIANDO</div>'+
-        '<div style="font-family:Orbitron,monospace;font-size:3rem;font-weight:900;color:var(--neon-cyan);text-shadow:0 0 20px rgba(0,245,255,0.6);margin-bottom:0.5rem;" id="lb-maint-timer">'+m+':'+s+'</div>'+
-        '<div style="font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);letter-spacing:2px;">VUELVE EN UNOS INSTANTES — EL RANKING FRESCO ESTÁ LLEGANDO</div>'+
-        '</div>';
-
-      // Cuenta regresiva en vivo
-      if(window._lbMaintInterval) clearInterval(window._lbMaintInterval);
-      window._lbMaintInterval=setInterval(()=>{
-        const remaining=maintenanceSecondsLeft();
-        const el=document.getElementById('lb-maint-timer');
-        if(!el||remaining<=0){
-          clearInterval(window._lbMaintInterval);
-          window._lbMaintInterval=null;
-          lbRender(game); // Recargar con el ranking nuevo
-          return;
-        }
-        const mm=Math.floor(remaining/60);
-        const ss=String(remaining%60).padStart(2,'0');
-        el.textContent=mm+':'+ss;
-      },1000);
-      return;
-    }
-
-    // Limpiar interval de mantenimiento si ya no aplica
-    if(window._lbMaintInterval){clearInterval(window._lbMaintInterval);window._lbMaintInterval=null;}
-
-    content.innerHTML='<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
-
-    // Sembrar datos de muestra si este mes está vacío
-    await lbEnsureSeed(game);
-
+  // Lee todas las entradas de un juego/mes desde localStorage
+  function lbGetAll(game){
     const month=getMonthKey();
     const prefix='lb_'+game+'_'+month+'_';
-    let entries=[];
-
-    try {
-      const result=await window.storage.list(prefix,true);
-      const keys=result?result.keys:[];
-      const reads=keys.map(k=>window.storage.get(k,true).catch(()=>null));
-      const values=await Promise.all(reads);
-      keys.forEach((k,i)=>{
-        if(!values[i]) return;
-        const username=k.slice(prefix.length);
-        let payload={score:0};
-        try{payload=JSON.parse(values[i].value);}catch(e){payload={score:parseFloat(values[i].value)||0};}
-        if(username) entries.push({username,...payload});
-      });
-    } catch(err){console.warn('lbRender error:',err);}
-
-    if(game==='memory'){
-      entries.sort((a,b)=>a.score>0&&b.score>0?a.score-b.score:a.score>0?-1:b.score>0?1:0);
-    } else {
-      entries.sort((a,b)=>b.score-a.score);
+    const entries=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(key&&key.startsWith(prefix)){
+        const username=key.slice(prefix.length);
+        if(!username) continue;
+        try{
+          const payload=JSON.parse(localStorage.getItem(key));
+          entries.push({username,...payload});
+        }catch(e){
+          const val=parseFloat(localStorage.getItem(key));
+          if(!isNaN(val)) entries.push({username,score:val});
+        }
+      }
     }
+    return entries;
+  }
 
+  // Limpia entradas de meses anteriores para no acumular basura
+  function lbCleanOldMonths(){
+    const current=getMonthKey();
+    const toDelete=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(!key||!key.startsWith('lb_')) continue;
+      // formato: lb_GAME_YYYYMM_username
+      const parts=key.split('_');
+      if(parts.length>=4){
+        const monthInKey=parts[2];
+        if(monthInKey&&monthInKey!==current&&/^\d{6}$/.test(monthInKey)){
+          toDelete.push(key);
+        }
+      }
+    }
+    toDelete.forEach(k=>localStorage.removeItem(k));
+  }
+
+  // Render principal del leaderboard
+  function lbRender(game){
+    updateMonthBadge();
+    lbCleanOldMonths();
+    lbEnsureSeed(game);
+
+    const content=document.getElementById('lb-content');
     const session=getSession();
+
+    let entries=lbGetAll(game);
 
     if(!entries.length){
       content.innerHTML='<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
       return;
     }
 
+    // Ordenar: memory → menor score primero (menos movs = mejor), resto → mayor score primero
+    if(game==='memory'){
+      entries.sort((a,b)=>{
+        if(a.score>0&&b.score>0) return a.score-b.score;
+        if(a.score>0) return -1;
+        if(b.score>0) return 1;
+        return 0;
+      });
+    }else{
+      entries.sort((a,b)=>b.score-a.score);
+    }
+
     const ranked=entries.filter(e=>e.score>0);
     const unranked=entries.filter(e=>!e.score||e.score===0);
     const allEntries=[...ranked,...unranked];
 
+    // Columnas extra según el juego
     let extraHeaders='',extraCols;
     if(game==='num'){
       extraHeaders='<th style="text-align:center">INTENTOS</th><th style="text-align:center">USADOS</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?e.intentosRestantes??e.score:'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?e.intentosUsados??'—':'—'}</td>`;
-    } else if(game==='memory'){
+      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.intentosRestantes!==undefined?e.intentosRestantes:e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.intentosUsados!==undefined?e.intentosUsados:'—'):'—'}</td>`;
+    }else if(game==='memory'){
       extraHeaders='<th style="text-align:center">MOVIM.</th><th style="text-align:center">FALLOS</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?e.movimientos??e.score:'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?e.fallos??'—':'—'}</td>`;
-    } else {
+      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.movimientos!==undefined?e.movimientos:e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.fallos!==undefined?e.fallos:'—'):'—'}</td>`;
+    }else{
       extraHeaders='<th style="text-align:center">COMPLETAD.</th><th style="text-align:center">ERRORES</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?e.completados??e.score:'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?e.errores??'—':'—'}</td>`;
+      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.completados!==undefined?e.completados:e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.errores!==undefined?e.errores:'—'):'—'}</td>`;
     }
 
     let html='<table class="lb-table"><thead><tr>'
@@ -789,13 +748,15 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       const inRanked=i<ranked.length;
       const rankClass=inRanked?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
       const rankLabel=inRanked?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
-      const isMe=session&&entry.username===session.toLowerCase();
+      const isMe=session&&entry.username.toLowerCase()===session.toLowerCase();
       const isSeed=SEED_USERS.has(entry.username.toLowerCase());
       html+='<tr class="'+(isMe?'lb-me':'')+'">'
         +'<td class="lb-rank '+rankClass+'">'+rankLabel+'</td>'
-        +'<td class="lb-name">'+entry.username.toUpperCase()+(isMe?' ◀':'')
+        +'<td class="lb-name">'+entry.username.toUpperCase()
+        +(isMe?' ◀':'')
         +(entry.score===0?' <span class="lb-played-badge">SIN SCORE</span>':'')
-        +(isSeed&&entry.score>0?' <span class="lb-seed-badge">BOT</span>':'')+'</td>'
+        +(isSeed&&entry.score>0?' <span class="lb-seed-badge">BOT</span>':'')
+        +'</td>'
         +extraCols(entry)
         +'</tr>';
     });
