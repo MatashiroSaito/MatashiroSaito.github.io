@@ -114,7 +114,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .act-status{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:1px;}
 .act-status-new{background:linear-gradient(135deg,var(--neon-pink),var(--neon-purple));color:#fff;}
 .act-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(0,245,255,0.2),transparent);}
-.modal-memory-inner{width:560px;max-width:95vw;}
+
+/* ── MEMORY CON IMÁGENES ── */
+.modal-memory-inner{width:660px;max-width:96vw;}
 .mg-diff-row{display:flex;justify-content:center;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap;}
 .mg-diff-btn{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;padding:5px 14px;border-radius:14px;cursor:pointer;transition:all 0.2s;background:none;color:var(--text-muted);border:1px solid var(--border-glow);}
 .mg-diff-btn:hover{border-color:var(--neon-purple);color:var(--neon-purple);}
@@ -128,21 +130,52 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .mg-pairs-row{display:flex;justify-content:center;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
 .mg-pair-dot{width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,245,255,0.3);background:rgba(0,245,255,0.05);transition:all 0.4s;}
 .mg-dot-done{background:var(--neon-cyan);box-shadow:0 0 6px var(--neon-cyan);border-color:var(--neon-cyan);}
-.mg-grid{display:grid;gap:10px;max-width:480px;margin:0 auto 1rem;}
-.mg-card{aspect-ratio:1;border-radius:10px;cursor:pointer;position:relative;transform-style:preserve-3d;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);}
+.mg-grid{display:grid;gap:8px;max-width:580px;margin:0 auto 1rem;justify-content:center;}
+.mg-card{
+  border-radius:10px;cursor:pointer;position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);
+}
 .mg-flipped{transform:rotateY(180deg);}
 .mg-matched{transform:rotateY(180deg);cursor:default;}
-.mg-matched .mg-front{border-color:var(--neon-cyan);box-shadow:0 0 14px rgba(0,245,255,0.3);}
-.mg-face{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;}
-.mg-back{background:linear-gradient(135deg,#0a0f28,#12003a);border:1px solid rgba(0,245,255,0.2);font-size:18px;color:rgba(0,245,255,0.4);}
-.mg-front{background:linear-gradient(135deg,#0d1535,#1a0535);border:1px solid rgba(0,245,255,0.3);transform:rotateY(180deg);flex-direction:column;gap:2px;}
-.mg-emoji{font-size:26px;line-height:1;}
+.mg-matched .mg-front{border-color:var(--neon-cyan);box-shadow:0 0 16px rgba(0,245,255,0.45);}
+.mg-face{
+  position:absolute;inset:0;border-radius:10px;
+  backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.mg-back{
+  background:linear-gradient(135deg,#0a0f28,#12003a);
+  border:2px solid rgba(0,245,255,0.2);
+  font-size:1.5rem;color:rgba(0,245,255,0.25);
+  font-family:'Orbitron',monospace;
+  flex-direction:column;gap:4px;
+}
+.mg-back-icon{font-size:1.8rem;line-height:1;}
+.mg-back-dots{display:flex;gap:3px;}
+.mg-back-dot{width:5px;height:5px;border-radius:50%;background:rgba(0,245,255,0.2);}
+.mg-front{
+  background:#0d1535;
+  border:2px solid rgba(0,245,255,0.3);
+  transform:rotateY(180deg);
+  padding:0;
+}
+.mg-front img{
+  width:100%;height:100%;
+  object-fit:cover;
+  border-radius:8px;
+  display:block;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
 .mg-message{text-align:center;font-family:'Orbitron',monospace;font-size:13px;letter-spacing:2px;min-height:26px;color:var(--neon-cyan);padding:0.3rem 0;}
 .mg-win{color:var(--neon-gold)!important;text-shadow:0 0 16px rgba(255,215,0,0.5);animation:pulse 1s infinite;}
 .mg-restart-btn{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;padding:8px 20px;border-radius:20px;cursor:pointer;transition:all 0.2s;background:none;border:1px solid var(--neon-cyan);color:var(--neon-cyan);}
 .mg-restart-btn:hover{background:rgba(0,245,255,0.1);box-shadow:0 0 12px rgba(0,245,255,0.2);}
 @keyframes mg-shake{0%,100%{transform:rotateY(180deg) translateX(0);}25%{transform:rotateY(180deg) translateX(-6px);}75%{transform:rotateY(180deg) translateX(6px);}}
-@keyframes mg-pop{0%{transform:rotateY(180deg) scale(1);}50%{transform:rotateY(180deg) scale(1.1);}100%{transform:rotateY(180deg) scale(1);}}
+@keyframes mg-pop{0%{transform:rotateY(180deg) scale(1);}50%{transform:rotateY(180deg) scale(1.12);}100%{transform:rotateY(180deg) scale(1);}}
 .mg-shake{animation:mg-shake 0.35s ease;}
 .mg-pop{animation:mg-pop 0.35s ease;}
 
@@ -154,7 +187,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-err-bar{display:flex;gap:6px;}
 .pz-err-pip{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,0,127,0.4);background:rgba(255,0,127,0.05);transition:all 0.4s;position:relative;overflow:hidden;}
 .pz-err-pip.lit{background:var(--neon-pink);border-color:var(--neon-pink);box-shadow:0 0 10px var(--neon-pink);}
-.pz-err-pip.lit::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;}
+.pz-err-pip.lit::after{content:'X';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;}
 .pz-counter-section{display:flex;align-items:center;gap:8px;}
 .pz-counter-label{font-family:'Orbitron',monospace;font-size:9px;color:var(--text-muted);letter-spacing:2px;}
 .pz-counter-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--neon-gold);text-shadow:0 0 10px rgba(255,215,0,0.5);}
@@ -178,8 +211,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-tray{display:grid;gap:3px;background:rgba(0,0,0,0.2);border:1px solid var(--border-glow);border-radius:12px;padding:6px;}
 .pz-tray-cell{border-radius:6px;border:1px dashed rgba(0,245,255,0.2);position:relative;overflow:hidden;background:rgba(5,8,25,0.4);transition:border-color 0.2s;}
 .pz-tray-cell.pz-drag-over{border-color:var(--neon-cyan);border-style:solid;box-shadow:0 0 10px rgba(0,245,255,0.2);}
-
-/* Banner de transición al siguiente puzzle */
 .pz-transition-wrap{position:relative;}
 .pz-next-banner{position:absolute;inset:0;background:rgba(3,5,15,0.94);backdrop-filter:blur(10px);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity 0.4s;}
 .pz-next-banner.show{opacity:1;pointer-events:all;}
@@ -187,7 +218,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-next-sub{font-family:'Orbitron',monospace;font-size:10px;color:var(--text-muted);letter-spacing:3px;}
 .pz-next-countdown{font-family:'Orbitron',monospace;font-size:3rem;font-weight:900;color:var(--neon-cyan);text-shadow:0 0 30px rgba(0,245,255,0.8);}
 .pz-next-img-preview{width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid var(--neon-purple);box-shadow:0 0 14px rgba(191,0,255,0.4);opacity:0.8;}
-
 .pz-msg{text-align:center;font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;margin-top:1rem;min-height:24px;color:var(--neon-cyan);}
 .pz-restart-btn{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:7px 18px;border-radius:18px;cursor:pointer;background:none;border:1px solid var(--neon-cyan);color:var(--neon-cyan);transition:all 0.2s;}
 .pz-restart-btn:hover{background:rgba(0,245,255,0.1);box-shadow:0 0 10px rgba(0,245,255,0.2);}
@@ -213,8 +243,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
         <span><span class="logo-k">K</span><span class="logo-bros">bros</span><span class="logo-games">Games</span></span>
       </a>
       <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="¿A qué jugamos hoy?" />
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="A que jugamos hoy?" />
       </div>
       <div class="nav-actions">
         <button class="nav-btn">LOGROS</button>
@@ -226,11 +256,11 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       <aside>
         <div class="sidebar-section">
           <div class="sidebar-label">Explorar</div>
-          <div class="sidebar-item active"><span class="si-icon">✦</span> Nuevos<span class="badge">3</span></div>
-          <div class="sidebar-item"><span class="si-icon">🏆</span> Logros</div>
-          <div class="sidebar-item" id="btn-actualizaciones"><span class="si-icon">🔄</span> Actualizaciones<span class="badge gold">!</span></div>
-          <div class="sidebar-item"><span class="si-icon">🕐</span> Recientes</div>
-          <div class="sidebar-item"><span class="si-icon">🎲</span> Random</div>
+          <div class="sidebar-item active"><span class="si-icon">&#10022;</span> Nuevos<span class="badge">3</span></div>
+          <div class="sidebar-item"><span class="si-icon">&#127942;</span> Logros</div>
+          <div class="sidebar-item" id="btn-actualizaciones"><span class="si-icon">&#128260;</span> Actualizaciones<span class="badge gold">!</span></div>
+          <div class="sidebar-item"><span class="si-icon">&#128336;</span> Recientes</div>
+          <div class="sidebar-item"><span class="si-icon">&#127922;</span> Random</div>
         </div>
       </aside>
 
@@ -243,21 +273,21 @@ main{flex:1;padding:2rem;overflow-y:auto;}
           <div class="game-card" id="game-card-1">
             <div class="card-new-badge">NUEVO</div>
             <div class="card-thumb">
-              <div class="thumb-icon">🔢</div>
+              <div class="thumb-icon">&#128290;</div>
               <div class="card-thumb-overlay"></div>
-              <button class="play-btn">▶</button>
+              <button class="play-btn">&#9654;</button>
             </div>
             <div class="card-info">
-              <div class="card-name">ADIVINA EL NÚM</div>
+              <div class="card-name">ADIVINA EL NUM</div>
               <div class="card-meta"><span class="card-tag">PUZZLE</span><div class="diff-dots"><div class="diff-dot active"></div><div class="diff-dot active"></div><div class="diff-dot"></div></div></div>
             </div>
           </div>
           <div class="game-card" id="game-card-2">
             <div class="card-new-badge">NUEVO</div>
             <div class="card-thumb card-thumb-memory">
-              <div class="thumb-icon">🃏</div>
+              <div class="thumb-icon">&#127183;</div>
               <div class="card-thumb-overlay"></div>
-              <button class="play-btn">▶</button>
+              <button class="play-btn">&#9654;</button>
             </div>
             <div class="card-info">
               <div class="card-name">MEMORY</div>
@@ -267,9 +297,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
           <div class="game-card" id="game-card-3">
             <div class="card-new-badge">NUEVO</div>
             <div class="card-thumb card-thumb-puzzle">
-              <div class="thumb-icon">🧩</div>
+              <div class="thumb-icon">&#129513;</div>
               <div class="card-thumb-overlay"></div>
-              <button class="play-btn">▶</button>
+              <button class="play-btn">&#9654;</button>
             </div>
             <div class="card-info">
               <div class="card-name">ROMPECABEZAS</div>
@@ -277,9 +307,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
             </div>
           </div>
           <div class="game-card locked">
-            <div class="card-thumb card-thumb-locked"><div class="thumb-icon">🔒</div></div>
+            <div class="card-thumb card-thumb-locked"><div class="thumb-icon">&#128274;</div></div>
             <div class="card-info">
-              <div class="card-name">PRÓXIMAMENTE</div>
+              <div class="card-name">PROXIMAMENTE</div>
               <div class="card-meta"><span class="card-tag card-tag-muted">???</span></div>
             </div>
           </div>
@@ -291,26 +321,26 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   <!-- MODAL ACTUALIZACIONES -->
   <div class="modal-overlay" id="modal-actualizaciones">
     <div class="modal modal-act-inner">
-      <button class="modal-close" id="modal-act-close">✕</button>
+      <button class="modal-close" id="modal-act-close">X</button>
       <div class="game-title">ACTUALIZACIONES</div>
       <div class="game-subtitle">resumen de juegos disponibles</div>
       <div class="act-cards">
         <div class="act-card">
-          <div class="act-card-header"><span class="act-icon">🔢</span><div><div class="act-name">ADIVINA EL NÚMERO</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Tienes <strong>5 intentos</strong> para adivinar un número secreto del 1 al 100. Después de cada intento el juego te dice si tu número es muy alto o muy bajo.</p>
-          <div class="act-meta"><span class="act-diff">Dificultad: ⭐⭐</span><span class="act-status act-status-new">NUEVO</span></div>
+          <div class="act-card-header"><span class="act-icon">&#128290;</span><div><div class="act-name">ADIVINA EL NUMERO</div><span class="act-tag">PUZZLE</span></div></div>
+          <p class="act-desc">Tienes <strong>5 intentos</strong> para adivinar un numero secreto del 1 al 100. Despues de cada intento el juego te dice si tu numero es muy alto o muy bajo.</p>
+          <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
         <div class="act-divider"></div>
         <div class="act-card">
-          <div class="act-card-header"><span class="act-icon">🃏</span><div><div class="act-name">MEMORY</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Encuentra todos los <strong>pares de cartas</strong> ocultas. Tres dificultades: Fácil (6 pares), Normal (8 pares) y Difícil (10 pares).</p>
-          <div class="act-meta"><span class="act-diff">Dificultad: ⭐⭐⭐</span><span class="act-status act-status-new">NUEVO</span></div>
+          <div class="act-card-header"><span class="act-icon">&#127183;</span><div><div class="act-name">MEMORY</div><span class="act-tag">PUZZLE</span></div></div>
+          <p class="act-desc">Encuentra todos los <strong>pares de cartas</strong> ocultas con ilustraciones. Tres dificultades: Facil (6 pares), Normal (8 pares) y Dificil (10 pares).</p>
+          <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
         <div class="act-divider"></div>
         <div class="act-card">
-          <div class="act-card-header"><span class="act-icon">🧩</span><div><div class="act-name">ROMPECABEZAS</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Arrastra las <strong>piezas al tablero</strong> 4×4. Al completar cada puzzle, el siguiente aparece automáticamente con una <strong>imagen aleatoria</strong>. ¡Juega en cadena sin parar!</p>
-          <div class="act-meta"><span class="act-diff">Dificultad: ⭐⭐⭐</span><span class="act-status act-status-new">NUEVO</span></div>
+          <div class="act-card-header"><span class="act-icon">&#129513;</span><div><div class="act-name">ROMPECABEZAS</div><span class="act-tag">PUZZLE</span></div></div>
+          <p class="act-desc">Arrastra las <strong>piezas al tablero</strong> 4x4. Al completar cada puzzle, el siguiente aparece automaticamente con una <strong>imagen aleatoria</strong>.</p>
+          <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
       </div>
     </div>
@@ -319,13 +349,13 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   <!-- MODAL MEMORY -->
   <div class="modal-overlay" id="modal-memory">
     <div class="modal modal-memory-inner">
-      <button class="modal-close" id="modal-memory-close">✕</button>
+      <button class="modal-close" id="modal-memory-close">X</button>
       <div class="game-title">MEMORY</div>
       <div class="game-subtitle">encuentra todos los pares</div>
       <div class="mg-diff-row" id="mg-diff-row">
-        <button class="mg-diff-btn" data-pairs="6">FÁCIL · 6</button>
-        <button class="mg-diff-btn mg-diff-active" data-pairs="8">NORMAL · 8</button>
-        <button class="mg-diff-btn" data-pairs="10">DIFÍCIL · 10</button>
+        <button class="mg-diff-btn" data-pairs="6">FACIL &middot; 6</button>
+        <button class="mg-diff-btn mg-diff-active" data-pairs="8">NORMAL &middot; 8</button>
+        <button class="mg-diff-btn" data-pairs="10">DIFICIL &middot; 10</button>
       </div>
       <div class="mg-stats">
         <div class="mg-stat"><div class="mg-stat-label">MOVIMIENTOS</div><div class="mg-stat-val cyan" id="mg-moves">0</div></div>
@@ -336,17 +366,17 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       <div class="mg-grid" id="mg-grid"></div>
       <div class="mg-message" id="mg-message"></div>
       <div style="display:flex;justify-content:center;margin-top:1rem;">
-        <button class="mg-restart-btn" id="mg-restart-btn">↺ REINICIAR</button>
+        <button class="mg-restart-btn" id="mg-restart-btn">&#8635; REINICIAR</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL ADIVINA EL NÚMERO -->
+  <!-- MODAL ADIVINA EL NUMERO -->
   <div class="modal-overlay" id="modal">
     <div class="modal">
-      <button class="modal-close" id="modal-close">✕</button>
-      <div class="game-title">ADIVINA EL NÚMERO</div>
-      <div class="game-subtitle">1 al 100 · 5 INTENTOS</div>
+      <button class="modal-close" id="modal-close">X</button>
+      <div class="game-title">ADIVINA EL NUMERO</div>
+      <div class="game-subtitle">1 al 100 &middot; 5 INTENTOS</div>
       <div class="game-area">
         <div class="attempts-bar" id="attempts-bar">
           <div class="attempt-pip" id="pip-1"></div><div class="attempt-pip" id="pip-2"></div>
@@ -354,26 +384,25 @@ main{flex:1;padding:2rem;overflow-y:auto;}
           <div class="attempt-pip" id="pip-5"></div>
         </div>
         <div class="hint-display" id="hint-display">?</div>
-        <div class="hint-text" id="hint-text">Piensa un número entre 1 y 100</div>
-        <div class="range-hint" id="range-hint">RANGO: 1 — 100</div>
+        <div class="hint-text" id="hint-text">Piensa un numero entre 1 y 100</div>
+        <div class="range-hint" id="range-hint">RANGO: 1 - 100</div>
         <div class="input-row">
-          <input class="guess-input" id="guess-input" type="number" min="1" max="100" placeholder="Tu número..." />
+          <input class="guess-input" id="guess-input" type="number" min="1" max="100" placeholder="Tu numero..." />
           <button class="guess-btn" id="guess-btn">IR</button>
         </div>
         <div class="history" id="history"></div>
         <div class="result-msg" id="result-msg"></div>
-        <button class="restart-btn" id="restart-btn">↺ JUGAR DE NUEVO</button>
+        <button class="restart-btn" id="restart-btn">&#8635; JUGAR DE NUEVO</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL ROMPECABEZAS (siempre 4×4, imágenes aleatorias en cadena) -->
+  <!-- MODAL ROMPECABEZAS -->
   <div class="modal-overlay" id="modal-puzzle">
     <div class="modal modal-puzzle-inner">
-      <button class="modal-close" id="modal-puzzle-close">✕</button>
+      <button class="modal-close" id="modal-puzzle-close">X</button>
       <div class="game-title">ROMPECABEZAS</div>
-      <div class="game-subtitle">4 × 4 · imágenes aleatorias en cadena</div>
-
+      <div class="game-subtitle">4 x 4 &middot; imagenes aleatorias en cadena</div>
       <div class="pz-header-row">
         <div class="pz-cur-img-wrap">
           <div class="pz-cur-label">IMAGEN ACTUAL</div>
@@ -390,27 +419,24 @@ main{flex:1;padding:2rem;overflow-y:auto;}
           </div>
         </div>
       </div>
-
       <div class="pz-transition-wrap">
         <div class="pz-game-area" id="pz-game-area"></div>
-        <!-- Banner de transición entre puzzles -->
         <div class="pz-next-banner" id="pz-next-banner">
-          <div class="pz-next-title">🏆 ¡COMPLETADO!</div>
+          <div class="pz-next-title">COMPLETADO!</div>
           <img class="pz-next-img-preview" id="pz-next-img-preview" src="" alt="siguiente" />
           <div class="pz-next-sub">SIGUIENTE EN</div>
           <div class="pz-next-countdown" id="pz-next-countdown">3</div>
         </div>
       </div>
-
       <div class="pz-msg" id="pz-msg"></div>
       <div style="display:flex;justify-content:center;margin-top:0.8rem;">
-        <button class="pz-restart-btn" id="pz-restart-btn">↺ NUEVO JUEGO</button>
+        <button class="pz-restart-btn" id="pz-restart-btn">&#8635; NUEVO JUEGO</button>
       </div>
     </div>
   </div>
 
   <script>
-  // ── STARFIELD ──
+  // STARFIELD
   const canvas=document.getElementById('stars-canvas');
   const ctx=canvas.getContext('2d');
   let stars=[],W,H;
@@ -421,22 +447,16 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   let shooters=[];
   function spawnShooter(){shooters.push({x:Math.random()*W,y:Math.random()*H*0.4,len:80+Math.random()*80,speed:6+Math.random()*4,angle:Math.PI/4+(Math.random()-0.5)*0.3,life:1});setTimeout(spawnShooter,2500+Math.random()*4000);}
   spawnShooter();
-  function drawStars(){
-    ctx.clearRect(0,0,W,H);
-    stars.forEach(s=>{s.alpha+=s.twinkleSpeed*s.twinkleDir;if(s.alpha>=1){s.alpha=1;s.twinkleDir=-1;}if(s.alpha<=0.1){s.alpha=0.1;s.twinkleDir=1;}ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.globalAlpha=s.alpha;ctx.fill();});
-    shooters=shooters.filter(s=>s.life>0);
-    shooters.forEach(s=>{const dx=Math.cos(s.angle)*s.len,dy=Math.sin(s.angle)*s.len;const grad=ctx.createLinearGradient(s.x,s.y,s.x-dx,s.y-dy);grad.addColorStop(0,`rgba(0,245,255,${s.life*0.9})`);grad.addColorStop(1,'transparent');ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-dx,s.y-dy);ctx.strokeStyle=grad;ctx.lineWidth=2;ctx.globalAlpha=1;ctx.stroke();s.x+=Math.cos(s.angle)*s.speed;s.y+=Math.sin(s.angle)*s.speed;s.life-=0.015;});
-    ctx.globalAlpha=1;requestAnimationFrame(drawStars);
-  }
+  function drawStars(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.alpha+=s.twinkleSpeed*s.twinkleDir;if(s.alpha>=1){s.alpha=1;s.twinkleDir=-1;}if(s.alpha<=0.1){s.alpha=0.1;s.twinkleDir=1;}ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.globalAlpha=s.alpha;ctx.fill();});shooters=shooters.filter(s=>s.life>0);shooters.forEach(s=>{const dx=Math.cos(s.angle)*s.len,dy=Math.sin(s.angle)*s.len;const grad=ctx.createLinearGradient(s.x,s.y,s.x-dx,s.y-dy);grad.addColorStop(0,'rgba(0,245,255,'+s.life*0.9+')');grad.addColorStop(1,'transparent');ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-dx,s.y-dy);ctx.strokeStyle=grad;ctx.lineWidth=2;ctx.globalAlpha=1;ctx.stroke();s.x+=Math.cos(s.angle)*s.speed;s.y+=Math.sin(s.angle)*s.speed;s.life-=0.015;});ctx.globalAlpha=1;requestAnimationFrame(drawStars);}
   drawStars();
 
-  // ── SIDEBAR ──
+  // SIDEBAR
   document.querySelectorAll('.sidebar-item').forEach(item=>{item.addEventListener('click',function(){document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active');});});
 
-  // ── ADIVINA EL NÚMERO ──
+  // ADIVINA EL NUMERO
   let secretNum,attemptsLeft,minRange,maxRange,gameOver;
-  function startGame(){secretNum=Math.floor(Math.random()*100)+1;attemptsLeft=5;minRange=1;maxRange=100;gameOver=false;document.getElementById('hint-display').textContent='?';document.getElementById('hint-text').textContent='Piensa un número entre 1 y 100';document.getElementById('range-hint').textContent='RANGO: 1 — 100';document.getElementById('history').innerHTML='';document.getElementById('result-msg').textContent='';document.getElementById('result-msg').className='result-msg';document.getElementById('guess-input').value='';document.getElementById('guess-input').disabled=false;document.getElementById('guess-btn').disabled=false;document.getElementById('restart-btn').classList.remove('show');for(let i=1;i<=5;i++){const p=document.getElementById('pip-'+i);p.classList.remove('used','wrong');}}
-  function doGuess(){if(gameOver)return;const input=document.getElementById('guess-input');const val=parseInt(input.value);if(isNaN(val)||val<1||val>100){input.classList.add('shake');setTimeout(()=>input.classList.remove('shake'),300);return;}const pipIndex=6-attemptsLeft;const pip=document.getElementById('pip-'+pipIndex);if(val===secretNum){pip.classList.add('used');document.getElementById('hint-display').textContent=val;document.getElementById('hint-text').textContent='';document.getElementById('result-msg').textContent='🎉 ¡CORRECTO!';document.getElementById('result-msg').className='result-msg win';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;return;}attemptsLeft--;pip.classList.add('wrong');const chip=document.createElement('div');if(val>secretNum){maxRange=Math.min(maxRange,val-1);chip.className='history-chip chip-high';chip.innerHTML=val+' ↓';document.getElementById('hint-display').textContent='↓';document.getElementById('hint-text').textContent='Demasiado alto, baja un poco';}else{minRange=Math.max(minRange,val+1);chip.className='history-chip chip-low';chip.innerHTML=val+' ↑';document.getElementById('hint-display').textContent='↑';document.getElementById('hint-text').textContent='Demasiado bajo, sube un poco';}document.getElementById('history').appendChild(chip);document.getElementById('range-hint').textContent='RANGO: '+minRange+' — '+maxRange;input.value='';if(attemptsLeft===0){document.getElementById('result-msg').textContent='💀 ERA EL '+secretNum;document.getElementById('result-msg').className='result-msg lose';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;}}
+  function startGame(){secretNum=Math.floor(Math.random()*100)+1;attemptsLeft=5;minRange=1;maxRange=100;gameOver=false;document.getElementById('hint-display').textContent='?';document.getElementById('hint-text').textContent='Piensa un numero entre 1 y 100';document.getElementById('range-hint').textContent='RANGO: 1 - 100';document.getElementById('history').innerHTML='';document.getElementById('result-msg').textContent='';document.getElementById('result-msg').className='result-msg';document.getElementById('guess-input').value='';document.getElementById('guess-input').disabled=false;document.getElementById('guess-btn').disabled=false;document.getElementById('restart-btn').classList.remove('show');for(let i=1;i<=5;i++){const p=document.getElementById('pip-'+i);p.classList.remove('used','wrong');}}
+  function doGuess(){if(gameOver)return;const input=document.getElementById('guess-input');const val=parseInt(input.value);if(isNaN(val)||val<1||val>100){input.classList.add('shake');setTimeout(()=>input.classList.remove('shake'),300);return;}const pipIndex=6-attemptsLeft;const pip=document.getElementById('pip-'+pipIndex);if(val===secretNum){pip.classList.add('used');document.getElementById('hint-display').textContent=val;document.getElementById('hint-text').textContent='';document.getElementById('result-msg').textContent='CORRECTO!';document.getElementById('result-msg').className='result-msg win';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;return;}attemptsLeft--;pip.classList.add('wrong');const chip=document.createElement('div');if(val>secretNum){maxRange=Math.min(maxRange,val-1);chip.className='history-chip chip-high';chip.innerHTML=val+' v';document.getElementById('hint-display').textContent='v';document.getElementById('hint-text').textContent='Demasiado alto, baja un poco';}else{minRange=Math.max(minRange,val+1);chip.className='history-chip chip-low';chip.innerHTML=val+' ^';document.getElementById('hint-display').textContent='^';document.getElementById('hint-text').textContent='Demasiado bajo, sube un poco';}document.getElementById('history').appendChild(chip);document.getElementById('range-hint').textContent='RANGO: '+minRange+' - '+maxRange;input.value='';if(attemptsLeft===0){document.getElementById('result-msg').textContent='ERA EL '+secretNum;document.getElementById('result-msg').className='result-msg lose';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;}}
   document.getElementById('game-card-1').addEventListener('click',()=>{startGame();document.getElementById('modal').classList.add('open');setTimeout(()=>document.getElementById('guess-input').focus(),300);});
   document.getElementById('modal-close').addEventListener('click',()=>document.getElementById('modal').classList.remove('open'));
   document.getElementById('modal').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.remove('open');});
@@ -444,250 +464,131 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.getElementById('guess-btn').addEventListener('click',doGuess);
   document.getElementById('restart-btn').addEventListener('click',startGame);
 
-  // ── ACTUALIZACIONES ──
+  // ACTUALIZACIONES
   document.getElementById('btn-actualizaciones').addEventListener('click',()=>document.getElementById('modal-actualizaciones').classList.add('open'));
   document.getElementById('modal-act-close').addEventListener('click',()=>document.getElementById('modal-actualizaciones').classList.remove('open'));
   document.getElementById('modal-actualizaciones').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-actualizaciones'))document.getElementById('modal-actualizaciones').classList.remove('open');});
 
-  // ── MEMORY ──
-  const MG_EMOJIS=['🚀','👾','🌌','⚡','💎','🔮','🎮','🌠','🪐','🦄','🌀','🏆','🎯','🔥','🧿','🦊','🎲','🃏','🧩','🌈'];
+  // MEMORY CON IMAGENES
+  const MG_IMAGES=[
+    'https://i.ibb.co/Bk9x1fY/Ilustracion1.jpg',
+    'https://i.ibb.co/DfsXmYMb/Ilustracion3.jpg',
+    'https://i.ibb.co/PkVtvKH/3.jpg',
+    'https://i.ibb.co/2705YRXh/62e40224920c78f83172f6448d78ee4a.jpg',
+    'https://i.ibb.co/qLrY9Cgv/Ilustracion4.jpg',
+    'https://i.ibb.co/rfT7VxRt/c616bd856b0fd6bc516d8c886d010550.jpg',
+    'https://i.ibb.co/0jhfWmMf/Ilustracion2.jpg',
+    'https://i.ibb.co/1YLdQRxy/c74b487f4fb45af150a6e36bd003d495.jpg',
+    'https://i.ibb.co/GbqCzqS/Ilustracion8.jpg',
+    'https://i.ibb.co/wFL6F1Wd/Ilustracion9.jpg'
+  ];
+
   let mgPairs=8,mgCards=[],mgFlipped=[],mgMatched=[],mgMoves=0,mgLock=false,mgTimerInterval=null,mgSeconds=0,mgStarted=false;
+
   function mgShuffle(arr){return [...arr].sort(()=>Math.random()-0.5);}
   function mgCols(p){return p===6?3:p===8?4:5;}
-  function mgInit(){clearInterval(mgTimerInterval);mgSeconds=0;mgMoves=0;mgMatched=[];mgFlipped=[];mgLock=false;mgStarted=false;const pool=mgShuffle(MG_EMOJIS).slice(0,mgPairs);mgCards=mgShuffle([...pool,...pool].map((e,i)=>({id:i,emoji:e})));document.getElementById('mg-moves').textContent='0';document.getElementById('mg-timer').textContent='0:00';document.getElementById('mg-pairs-found').innerHTML='0/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-message').textContent='';document.getElementById('mg-message').className='mg-message';const grid=document.getElementById('mg-grid');grid.style.gridTemplateColumns='repeat('+mgCols(mgPairs)+', 1fr)';grid.innerHTML='';const pRow=document.getElementById('mg-pairs-row');pRow.innerHTML='';for(let i=0;i<mgPairs;i++){const dot=document.createElement('div');dot.className='mg-pair-dot';dot.id='mg-dot-'+i;pRow.appendChild(dot);}mgCards.forEach((card,idx)=>{const el=document.createElement('div');el.className='mg-card';el.dataset.idx=idx;el.innerHTML='<div class="mg-face mg-back">✦</div><div class="mg-face mg-front"><span class="mg-emoji">'+card.emoji+'</span></div>';el.addEventListener('click',()=>mgClick(el,idx));grid.appendChild(el);});}
+  function mgCardSize(p){if(p===6)return 110;if(p===8)return 92;return 80;}
+
+  function mgInit(){
+    clearInterval(mgTimerInterval);
+    mgSeconds=0;mgMoves=0;mgMatched=[];mgFlipped=[];mgLock=false;mgStarted=false;
+    const pool=mgShuffle([...MG_IMAGES]).slice(0,mgPairs);
+    mgCards=mgShuffle([...pool,...pool].map((src,i)=>({id:i,src:src})));
+    document.getElementById('mg-moves').textContent='0';
+    document.getElementById('mg-timer').textContent='0:00';
+    document.getElementById('mg-pairs-found').innerHTML='0/<span id="mg-pairs-total">'+mgPairs+'</span>';
+    document.getElementById('mg-message').textContent='';
+    document.getElementById('mg-message').className='mg-message';
+    const grid=document.getElementById('mg-grid');
+    const cols=mgCols(mgPairs);
+    const sz=mgCardSize(mgPairs);
+    grid.style.gridTemplateColumns='repeat('+cols+', '+sz+'px)';
+    grid.innerHTML='';
+    const pRow=document.getElementById('mg-pairs-row');
+    pRow.innerHTML='';
+    for(let i=0;i<mgPairs;i++){const dot=document.createElement('div');dot.className='mg-pair-dot';dot.id='mg-dot-'+i;pRow.appendChild(dot);}
+    mgCards.forEach((card,idx)=>{
+      const el=document.createElement('div');
+      el.className='mg-card';
+      el.style.width=sz+'px';
+      el.style.height=sz+'px';
+      el.dataset.idx=idx;
+      // Cara trasera
+      const back=document.createElement('div');
+      back.className='mg-face mg-back';
+      const bIcon=document.createElement('div');bIcon.className='mg-back-icon';bIcon.textContent='?';
+      const bDots=document.createElement('div');bDots.className='mg-back-dots';
+      for(let d=0;d<3;d++){const dd=document.createElement('div');dd.className='mg-back-dot';bDots.appendChild(dd);}
+      back.appendChild(bIcon);back.appendChild(bDots);
+      // Cara frontal con imagen
+      const front=document.createElement('div');
+      front.className='mg-face mg-front';
+      const img=document.createElement('img');
+      img.src=card.src;img.alt='carta';img.draggable=false;
+      front.appendChild(img);
+      el.appendChild(back);el.appendChild(front);
+      el.addEventListener('click',()=>mgClick(el,idx));
+      grid.appendChild(el);
+    });
+  }
+
   function mgStartTimer(){mgTimerInterval=setInterval(()=>{mgSeconds++;const m=Math.floor(mgSeconds/60),s=mgSeconds%60;document.getElementById('mg-timer').textContent=m+':'+String(s).padStart(2,'0');},1000);}
+
   function mgClick(el,idx){if(mgLock||mgMatched.includes(idx)||mgFlipped.includes(idx))return;if(!mgStarted){mgStarted=true;mgStartTimer();}el.classList.add('mg-flipped');mgFlipped.push(idx);if(mgFlipped.length===2){mgLock=true;mgMoves++;document.getElementById('mg-moves').textContent=mgMoves;mgCheckMatch();}}
-  function mgCheckMatch(){const[a,b]=mgFlipped;const allCards=document.querySelectorAll('#mg-grid .mg-card');if(mgCards[a].emoji===mgCards[b].emoji){mgMatched.push(a,b);const count=mgMatched.length/2;document.getElementById('mg-pairs-found').innerHTML=count+'/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-dot-'+(count-1)).classList.add('mg-dot-done');allCards[a].classList.add('mg-matched');allCards[b].classList.add('mg-matched');setTimeout(()=>{allCards[a].classList.add('mg-pop');allCards[b].classList.add('mg-pop');},50);setTimeout(()=>{allCards[a].classList.remove('mg-pop');allCards[b].classList.remove('mg-pop');},400);mgFlipped=[];mgLock=false;if(mgMatched.length===mgCards.length){clearInterval(mgTimerInterval);const m=Math.floor(mgSeconds/60),s=mgSeconds%60;setTimeout(()=>{const msg=document.getElementById('mg-message');msg.textContent='🏆 ¡GANASTE! '+mgMoves+' mov · '+m+':'+String(s).padStart(2,'0');msg.className='mg-message mg-win';},400);}}else{setTimeout(()=>{allCards[a].classList.add('mg-shake');allCards[b].classList.add('mg-shake');},100);setTimeout(()=>{allCards[a].classList.remove('mg-flipped','mg-shake');allCards[b].classList.remove('mg-flipped','mg-shake');mgFlipped=[];mgLock=false;},900);}}
+
+  function mgCheckMatch(){
+    const[a,b]=mgFlipped;
+    const allCards=document.querySelectorAll('#mg-grid .mg-card');
+    if(mgCards[a].src===mgCards[b].src){
+      mgMatched.push(a,b);
+      const count=mgMatched.length/2;
+      document.getElementById('mg-pairs-found').innerHTML=count+'/<span id="mg-pairs-total">'+mgPairs+'</span>';
+      document.getElementById('mg-dot-'+(count-1)).classList.add('mg-dot-done');
+      allCards[a].classList.add('mg-matched');allCards[b].classList.add('mg-matched');
+      setTimeout(()=>{allCards[a].classList.add('mg-pop');allCards[b].classList.add('mg-pop');},50);
+      setTimeout(()=>{allCards[a].classList.remove('mg-pop');allCards[b].classList.remove('mg-pop');},400);
+      mgFlipped=[];mgLock=false;
+      if(mgMatched.length===mgCards.length){clearInterval(mgTimerInterval);const m=Math.floor(mgSeconds/60),s=mgSeconds%60;setTimeout(()=>{const msg=document.getElementById('mg-message');msg.textContent='GANASTE! '+mgMoves+' mov - '+m+':'+String(s).padStart(2,'0');msg.className='mg-message mg-win';},400);}
+    }else{
+      setTimeout(()=>{allCards[a].classList.add('mg-shake');allCards[b].classList.add('mg-shake');},100);
+      setTimeout(()=>{allCards[a].classList.remove('mg-flipped','mg-shake');allCards[b].classList.remove('mg-flipped','mg-shake');mgFlipped=[];mgLock=false;},900);
+    }
+  }
+
   document.querySelectorAll('.mg-diff-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.mg-diff-btn').forEach(b=>b.classList.remove('mg-diff-active'));btn.classList.add('mg-diff-active');mgPairs=parseInt(btn.dataset.pairs);mgInit();});});
   document.getElementById('mg-restart-btn').addEventListener('click',mgInit);
   document.getElementById('game-card-2').addEventListener('click',()=>{mgInit();document.getElementById('modal-memory').classList.add('open');});
   document.getElementById('modal-memory-close').addEventListener('click',()=>{document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);});
   document.getElementById('modal-memory').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-memory')){document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);}});
 
-  // ── ROMPECABEZAS — siempre 4×4, imágenes aleatorias en cadena ──
+  // ROMPECABEZAS
   (function(){
-    const IMAGES=[
-      'https://i.ibb.co/KpQvVHvM/SPOILER-Dibujo-comunidad.jpg',
-      'https://i.ibb.co/7Jjk4Zs6/Cxn-Horadeaventura.jpg',
-      'https://i.ibb.co/60bZkVv5/SPOILER-121-sin-titulo-20260122021505.jpg'
-    ];
-    const GRID_N=4;
-    const MAX_ERRORS=5;
+    const IMAGES=['https://i.ibb.co/KpQvVHvM/SPOILER-Dibujo-comunidad.jpg','https://i.ibb.co/7Jjk4Zs6/Cxn-Horadeaventura.jpg','https://i.ibb.co/60bZkVv5/SPOILER-121-sin-titulo-20260122021505.jpg'];
+    const GRID_N=4;const MAX_ERRORS=5;
     let errors=0,won=false,completedCount=0;
     let pieces=[],boardSlots=[],traySlots=[];
     let dragPieceIdx=null,dragGhost=null;
-    // Cola aleatoria sin repetir la misma imagen consecutiva
     let imgPool=[],currentImgIdx=-1;
-
-    function refillPool(){
-      imgPool=[0,1,2].sort(()=>Math.random()-0.5);
-      // Si el primero de la nueva cola es igual al actual, rotarlo al final
-      if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}
-    }
-
-    function pickNextImg(){
-      if(!imgPool.length) refillPool();
-      currentImgIdx=imgPool.shift();
-      return currentImgIdx;
-    }
-
-    function buildErrBar(){
-      const bar=document.getElementById('pz-err-bar');bar.innerHTML='';
-      for(let i=0;i<MAX_ERRORS;i++){const p=document.createElement('div');p.className='pz-err-pip'+(i<errors?' lit':'');bar.appendChild(p);}
-    }
-
-    const SZ=68; // píxeles de cada celda (4×4 cabe cómodo)
-
-    function buildGame(){
-      // Limpiar countdown si hay uno activo
-      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
-      document.getElementById('pz-next-banner').classList.remove('show');
-
-      errors=0;won=false;
-      document.getElementById('pz-msg').textContent='';
-      document.getElementById('pz-msg').className='pz-msg';
-      buildErrBar();
-
-      const imgIdx=pickNextImg();
-      const img=IMAGES[imgIdx];
-      document.getElementById('pz-cur-thumb').src=img;
-      document.getElementById('pz-completed').textContent=completedCount;
-
-      const total=GRID_N*GRID_N;
-      pieces=[];
-      for(let i=0;i<total;i++){
-        const row=Math.floor(i/GRID_N),col=i%GRID_N;
-        pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});
-      }
-      const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);
-      const area=document.getElementById('pz-game-area');area.innerHTML='';
-
-      // Tablero
-      const boardWrap=document.createElement('div');
-      const board=document.createElement('div');board.className='pz-board';
-      board.style.gridTemplateColumns=`repeat(${GRID_N},${SZ}px)`;
-      boardSlots=[];
-      for(let i=0;i<total;i++){
-        const cell=document.createElement('div');cell.className='pz-cell';
-        cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.boardIdx=i;
-        setupBoardDrop(cell,i);board.appendChild(cell);boardSlots.push(cell);
-      }
-      boardWrap.appendChild(board);area.appendChild(boardWrap);
-
-      // Bandeja
-      const tWrap=document.createElement('div');tWrap.className='pz-tray-wrap';
-      const tLbl=document.createElement('div');tLbl.className='pz-tray-label';tLbl.textContent='PIEZAS';tWrap.appendChild(tLbl);
-      const tray=document.createElement('div');tray.className='pz-tray';
-      tray.style.gridTemplateColumns=`repeat(4,${SZ}px)`;
-      traySlots=[];
-      for(let i=0;i<total;i++){
-        const cell=document.createElement('div');cell.className='pz-tray-cell';
-        cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.trayIdx=i;
-        setupTrayDrop(cell,i);tray.appendChild(cell);traySlots.push(cell);
-      }
-      tWrap.appendChild(tray);area.appendChild(tWrap);
-
-      shuffled.forEach((pieceId,trayPos)=>{pieces[pieceId].trayPos=trayPos;renderPieceInTray(pieceId,trayPos);});
-    }
-
-    function makePieceEl(pId){
-      const p=pieces[pId];const el=document.createElement('div');el.className='pz-piece';
-      el.style.backgroundImage=`url('${p.bg}')`;el.style.backgroundSize=p.bgSize;
-      el.style.backgroundPosition=`${p.bgX}px ${p.bgY}px`;el.dataset.pieceId=pId;
-      setupDrag(el,pId);return el;
-    }
+    function refillPool(){imgPool=[0,1,2].sort(()=>Math.random()-0.5);if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}}
+    function pickNextImg(){if(!imgPool.length)refillPool();currentImgIdx=imgPool.shift();return currentImgIdx;}
+    function buildErrBar(){const bar=document.getElementById('pz-err-bar');bar.innerHTML='';for(let i=0;i<MAX_ERRORS;i++){const p=document.createElement('div');p.className='pz-err-pip'+(i<errors?' lit':'');bar.appendChild(p);}}
+    const SZ=68;
+    function buildGame(){if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');errors=0;won=false;document.getElementById('pz-msg').textContent='';document.getElementById('pz-msg').className='pz-msg';buildErrBar();const imgIdx=pickNextImg();const img=IMAGES[imgIdx];document.getElementById('pz-cur-thumb').src=img;document.getElementById('pz-completed').textContent=completedCount;const total=GRID_N*GRID_N;pieces=[];for(let i=0;i<total;i++){const row=Math.floor(i/GRID_N),col=i%GRID_N;pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});}const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);const area=document.getElementById('pz-game-area');area.innerHTML='';const boardWrap=document.createElement('div');const board=document.createElement('div');board.className='pz-board';board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';boardSlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.boardIdx=i;setupBoardDrop(cell,i);board.appendChild(cell);boardSlots.push(cell);}boardWrap.appendChild(board);area.appendChild(boardWrap);const tWrap=document.createElement('div');tWrap.className='pz-tray-wrap';const tLbl=document.createElement('div');tLbl.className='pz-tray-label';tLbl.textContent='PIEZAS';tWrap.appendChild(tLbl);const tray=document.createElement('div');tray.className='pz-tray';tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';traySlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-tray-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.trayIdx=i;setupTrayDrop(cell,i);tray.appendChild(cell);traySlots.push(cell);}tWrap.appendChild(tray);area.appendChild(tWrap);shuffled.forEach((pieceId,trayPos)=>{pieces[pieceId].trayPos=trayPos;renderPieceInTray(pieceId,trayPos);});}
+    function makePieceEl(pId){const p=pieces[pId];const el=document.createElement('div');el.className='pz-piece';el.style.backgroundImage='url(\''+p.bg+'\')';el.style.backgroundSize=p.bgSize;el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';el.dataset.pieceId=pId;setupDrag(el,pId);return el;}
     function renderPieceInTray(pId,trayPos){const cell=traySlots[trayPos];cell.innerHTML='';const el=makePieceEl(pId);cell.appendChild(el);}
     function renderPieceOnBoard(pId,boardPos){const cell=boardSlots[boardPos];cell.innerHTML='';const el=makePieceEl(pId);if(pieces[pId].placed)el.classList.add('pz-piece-locked');cell.appendChild(el);}
-
-    function setupDrag(el,pId){
-      el.addEventListener('mousedown',e=>{if(pieces[pId].placed)return;e.preventDefault();startDrag(e.clientX,e.clientY,pId,el);});
-      el.addEventListener('touchstart',e=>{if(pieces[pId].placed)return;e.preventDefault();const t=e.touches[0];startDrag(t.clientX,t.clientY,pId,el);},{passive:false});
-    }
-
-    function startDrag(cx,cy,pId,el){
-      dragPieceIdx=pId;const p=pieces[pId];
-      el.classList.add('pz-dragging');
-      dragGhost=document.createElement('div');dragGhost.className='pz-ghost-drag';
-      dragGhost.style.width=SZ+'px';dragGhost.style.height=SZ+'px';
-      dragGhost.style.backgroundImage=`url('${p.bg}')`;
-      dragGhost.style.backgroundSize=p.bgSize;dragGhost.style.backgroundPosition=`${p.bgX}px ${p.bgY}px`;
-      dragGhost.style.left=cx+'px';dragGhost.style.top=cy+'px';document.body.appendChild(dragGhost);
-      function onMove(ex,ey){dragGhost.style.left=ex+'px';dragGhost.style.top=ey+'px';}
-      function onEnd(ex,ey){
-        document.removeEventListener('mousemove',mh);document.removeEventListener('mouseup',uh);
-        document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',teh);
-        if(dragGhost)dragGhost.remove();dragGhost=null;el.classList.remove('pz-dragging');
-        const drop=document.elementFromPoint(ex,ey);handleDropOn(drop,pId);dragPieceIdx=null;
-      }
-      const mh=e=>onMove(e.clientX,e.clientY);
-      const uh=e=>onEnd(e.clientX,e.clientY);
-      const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};
-      const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};
-      document.addEventListener('mousemove',mh);document.addEventListener('mouseup',uh);
-      document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',teh,{passive:false});
-    }
-
-    function handleDropOn(drop,pId){
-      if(!drop)return;
-      const boardCell=drop.closest('[data-board-idx]');
-      const trayCell=drop.closest('[data-tray-idx]');
-      if(boardCell)tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));
-      else if(trayCell)returnToTray(pId,parseInt(trayCell.dataset.trayIdx));
-    }
-
-    function tryPlaceOnBoard(pId,bIdx){
-      const p=pieces[pId];if(won||p.placed)return;
-      const occupant=boardSlots[bIdx].querySelector('.pz-piece');
-      if(occupant){
-        const occId=parseInt(occupant.dataset.pieceId);
-        if(pieces[occId].placed)return;
-        returnToTray(occId,p.trayPos!=null?p.trayPos:findFreeTraySlot());
-      }
-      if(bIdx===p.id){
-        p.placed=true;p.boardPos=bIdx;
-        if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';p.trayPos=null;}
-        renderPieceOnBoard(pId,bIdx);
-        boardSlots[bIdx].classList.add('pz-correct-flash');
-        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);
-        checkWin();
-      } else {
-        if(errors>=MAX_ERRORS)return; // ya perdido
-        errors++;buildErrBar();
-        boardSlots[bIdx].classList.add('pz-error-flash');
-        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);
-        if(errors>=MAX_ERRORS&&!won){
-          document.getElementById('pz-msg').textContent='💀 DEMASIADOS ERRORES — intenta de nuevo';
-        }
-      }
-    }
-
-    function returnToTray(pId,tIdx){
-      const p=pieces[pId];
-      if(p.trayPos!=null)traySlots[p.trayPos].innerHTML='';
-      if(p.boardPos!=null)boardSlots[p.boardPos].innerHTML='';
-      p.boardPos=null;p.placed=false;
-      let slot=tIdx!=null?tIdx:findFreeTraySlot();
-      if(traySlots[slot]&&traySlots[slot].querySelector('.pz-piece'))slot=findFreeTraySlot();
-      p.trayPos=slot;renderPieceInTray(pId,slot);
-    }
-
+    function setupDrag(el,pId){el.addEventListener('mousedown',e=>{if(pieces[pId].placed)return;e.preventDefault();startDrag(e.clientX,e.clientY,pId,el);});el.addEventListener('touchstart',e=>{if(pieces[pId].placed)return;e.preventDefault();const t=e.touches[0];startDrag(t.clientX,t.clientY,pId,el);},{passive:false});}
+    function startDrag(cx,cy,pId,el){dragPieceIdx=pId;const p=pieces[pId];el.classList.add('pz-dragging');dragGhost=document.createElement('div');dragGhost.className='pz-ghost-drag';dragGhost.style.width=SZ+'px';dragGhost.style.height=SZ+'px';dragGhost.style.backgroundImage='url(\''+p.bg+'\')';dragGhost.style.backgroundSize=p.bgSize;dragGhost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';dragGhost.style.left=cx+'px';dragGhost.style.top=cy+'px';document.body.appendChild(dragGhost);function onMove(ex,ey){dragGhost.style.left=ex+'px';dragGhost.style.top=ey+'px';}function onEnd(ex,ey){document.removeEventListener('mousemove',mh);document.removeEventListener('mouseup',uh);document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',teh);if(dragGhost)dragGhost.remove();dragGhost=null;el.classList.remove('pz-dragging');const drop=document.elementFromPoint(ex,ey);handleDropOn(drop,pId);dragPieceIdx=null;}const mh=e=>onMove(e.clientX,e.clientY);const uh=e=>onEnd(e.clientX,e.clientY);const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};document.addEventListener('mousemove',mh);document.addEventListener('mouseup',uh);document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',teh,{passive:false});}
+    function handleDropOn(drop,pId){if(!drop)return;const boardCell=drop.closest('[data-board-idx]');const trayCell=drop.closest('[data-tray-idx]');if(boardCell)tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));else if(trayCell)returnToTray(pId,parseInt(trayCell.dataset.trayIdx));}
+    function tryPlaceOnBoard(pId,bIdx){const p=pieces[pId];if(won||p.placed)return;const occupant=boardSlots[bIdx].querySelector('.pz-piece');if(occupant){const occId=parseInt(occupant.dataset.pieceId);if(pieces[occId].placed)return;returnToTray(occId,p.trayPos!=null?p.trayPos:findFreeTraySlot());}if(bIdx===p.id){p.placed=true;p.boardPos=bIdx;if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';p.trayPos=null;}renderPieceOnBoard(pId,bIdx);boardSlots[bIdx].classList.add('pz-correct-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);checkWin();}else{if(errors>=MAX_ERRORS)return;errors++;buildErrBar();boardSlots[bIdx].classList.add('pz-error-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);if(errors>=MAX_ERRORS&&!won){document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES - intenta de nuevo';}}}
+    function returnToTray(pId,tIdx){const p=pieces[pId];if(p.trayPos!=null)traySlots[p.trayPos].innerHTML='';if(p.boardPos!=null)boardSlots[p.boardPos].innerHTML='';p.boardPos=null;p.placed=false;let slot=tIdx!=null?tIdx:findFreeTraySlot();if(traySlots[slot]&&traySlots[slot].querySelector('.pz-piece'))slot=findFreeTraySlot();p.trayPos=slot;renderPieceInTray(pId,slot);}
     function findFreeTraySlot(){for(let i=0;i<traySlots.length;i++){if(!traySlots[i].querySelector('.pz-piece'))return i;}return 0;}
-
-    function setupBoardDrop(cell,bIdx){
-      cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});
-      cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));
-      cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)tryPlaceOnBoard(dragPieceIdx,bIdx);});
-    }
-    function setupTrayDrop(cell,tIdx){
-      cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});
-      cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));
-      cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)returnToTray(dragPieceIdx,tIdx);});
-    }
-
-    function checkWin(){
-      if(!pieces.every(p=>p.placed))return;
-      won=true;
-      completedCount++;
-      document.getElementById('pz-completed').textContent=completedCount;
-
-      // Calcular la siguiente imagen (peekear sin consumir)
-      const tempPool=[...imgPool];
-      if(!tempPool.length){const arr=[0,1,2].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}
-      const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);
-      document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];
-
-      // Mostrar banner con cuenta regresiva 3-2-1
-      const banner=document.getElementById('pz-next-banner');
-      const countEl=document.getElementById('pz-next-countdown');
-      let count=3;countEl.textContent=count;
-      banner.classList.add('show');
-      window._pzCountdown=setInterval(()=>{
-        count--;
-        if(count<=0){
-          clearInterval(window._pzCountdown);window._pzCountdown=null;
-          banner.classList.remove('show');
-          buildGame(); // ← siguiente puzzle automático
-        } else {
-          countEl.textContent=count;
-        }
-      },1000);
-    }
-
-    // Eventos
-    document.getElementById('pz-restart-btn').addEventListener('click',()=>{
-      completedCount=0;imgPool=[];currentImgIdx=-1;
-      buildGame();
-    });
-    document.getElementById('game-card-3').addEventListener('click',()=>{
-      completedCount=0;imgPool=[];currentImgIdx=-1;
-      buildGame();
-      document.getElementById('modal-puzzle').classList.add('open');
-    });
-    function closePuzzle(){
-      document.getElementById('modal-puzzle').classList.remove('open');
-      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
-      document.getElementById('pz-next-banner').classList.remove('show');
-    }
+    function setupBoardDrop(cell,bIdx){cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)tryPlaceOnBoard(dragPieceIdx,bIdx);});}
+    function setupTrayDrop(cell,tIdx){cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)returnToTray(dragPieceIdx,tIdx);});}
+    function checkWin(){if(!pieces.every(p=>p.placed))return;won=true;completedCount++;document.getElementById('pz-completed').textContent=completedCount;const tempPool=[...imgPool];if(!tempPool.length){const arr=[0,1,2].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];const banner=document.getElementById('pz-next-banner');const countEl=document.getElementById('pz-next-countdown');let count=3;countEl.textContent=count;banner.classList.add('show');window._pzCountdown=setInterval(()=>{count--;if(count<=0){clearInterval(window._pzCountdown);window._pzCountdown=null;banner.classList.remove('show');buildGame();}else{countEl.textContent=count;}},1000);}
+    document.getElementById('pz-restart-btn').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();});
+    document.getElementById('game-card-3').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();document.getElementById('modal-puzzle').classList.add('open');});
+    function closePuzzle(){document.getElementById('modal-puzzle').classList.remove('open');if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');}
     document.getElementById('modal-puzzle-close').addEventListener('click',closePuzzle);
     document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
   })();
