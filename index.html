@@ -607,48 +607,30 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // Datos de muestra — se insertan si el leaderboard del mes está vacío
   const LB_SEED={
     num:[
-      {username:'Kbros',     score:5,intentosRestantes:5,intentosUsados:0},
-      {username:'NeonGhost', score:4,intentosRestantes:4,intentosUsados:1},
-      {username:'StarLord99',score:3,intentosRestantes:3,intentosUsados:2},
-      {username:'CyberKid',  score:3,intentosRestantes:3,intentosUsados:2},
-      {username:'AstroPunk', score:2,intentosRestantes:2,intentosUsados:3},
-      {username:'VoidWalker',score:1,intentosRestantes:1,intentosUsados:4},
+      {username:'Kbros',score:5,intentosRestantes:5,intentosUsados:0},
     ],
     memory:[
-      {username:'Kbros',     score:10,movimientos:10,fallos:2},
-      {username:'NeonGhost', score:14,movimientos:14,fallos:5},
-      {username:'StarLord99',score:18,movimientos:18,fallos:8},
-      {username:'CyberKid',  score:22,movimientos:22,fallos:11},
-      {username:'AstroPunk', score:28,movimientos:28,fallos:14},
-      {username:'VoidWalker',score:34,movimientos:34,fallos:18},
+      {username:'Kbros',score:52,movimientos:52,fallos:18},
     ],
     puzzle:[
-      {username:'Kbros',     score:7,completados:7,errores:1},
-      {username:'NeonGhost', score:5,completados:5,errores:2},
-      {username:'StarLord99',score:3,completados:3,errores:4},
-      {username:'CyberKid',  score:2,completados:2,errores:3},
-      {username:'AstroPunk', score:1,completados:1,errores:5},
-      {username:'VoidWalker',score:1,completados:1,errores:4},
+      {username:'Kbros',score:1,completados:1,errores:4},
     ]
   };
 
-  const SEED_USERS=new Set(['kbros','neonghost','starlord99','cyberkid','astropunk','voidwalker']);
+  const SEED_USERS=new Set(['kbros']);
 
   // Siembra datos de muestra si este mes no tiene ninguna entrada
   function lbEnsureSeed(game){
     const month=getMonthKey();
     const prefix='lb_'+game+'_'+month+'_';
-    // Revisar si ya existe al menos 1 clave de este juego/mes
-    const exists=Object.keys(localStorage).some(k=>k.startsWith(prefix));
-    if(!exists){
-      const entries=LB_SEED[game]||[];
-      entries.forEach(e=>{
-        const key=prefix+e.username.toLowerCase();
-        if(!localStorage.getItem(key)){
-          localStorage.setItem(key,JSON.stringify(e));
-        }
-      });
-    }
+    // Siempre garantizar que Kbros (bot) este presente
+    const entries=LB_SEED[game]||[];
+    entries.forEach(e=>{
+      const key=prefix+e.username.toLowerCase();
+      if(!localStorage.getItem(key)){
+        localStorage.setItem(key,JSON.stringify(e));
+      }
+    });
   }
 
   // Lee todas las entradas de un juego/mes desde localStorage
@@ -781,6 +763,21 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     updateMonthBadge();
     lbRender(lbCurrentTab);
   }
+
+  // Limpia bots viejos y garantiza solo Kbros al cargar la página
+  (function lbBootClean(){
+    const oldBots=['neonghost','starlord99','cyberkid','astropunk','voidwalker'];
+    for(let i=localStorage.length-1;i>=0;i--){
+      const k=localStorage.key(i);
+      if(!k||!k.startsWith('lb_')) continue;
+      const parts=k.split('_');
+      if(parts.length>=4){
+        const user=parts.slice(3).join('_');
+        if(oldBots.includes(user)) localStorage.removeItem(k);
+      }
+    }
+    ['num','memory','puzzle'].forEach(g=>lbEnsureSeed(g));
+  })();
 
   document.getElementById('btn-leaderboard').addEventListener('click',openLeaderboard);
   document.getElementById('modal-lb-close').addEventListener('click',()=>document.getElementById('modal-leaderboard').classList.remove('open'));
