@@ -232,10 +232,12 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-score{font-family:'Orbitron',monospace;font-size:12px;color:var(--neon-cyan);text-align:right;}
 .lb-empty{text-align:center;font-family:'Orbitron',monospace;font-size:11px;color:var(--text-muted);padding:2rem;letter-spacing:2px;}
 .lb-me td{background:rgba(0,245,255,0.04);border-left:2px solid var(--neon-cyan);}
-.lb-refresh-row{display:flex;justify-content:flex-end;margin-bottom:0.8rem;}
+.lb-refresh-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;}
 .lb-refresh-btn{background:none;border:1px solid var(--border-glow);color:var(--text-muted);border-radius:14px;padding:4px 12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
 .lb-refresh-btn:hover{border-color:var(--neon-cyan);color:var(--neon-cyan);}
+.lb-month-badge{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;color:var(--neon-purple);background:rgba(191,0,255,0.1);border:1px solid rgba(191,0,255,0.3);border-radius:10px;padding:3px 10px;}
 .lb-shared-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-purple);letter-spacing:1px;margin-top:1rem;opacity:0.7;}
+.lb-reset-note{text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-top:0.4rem;opacity:0.5;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -500,17 +502,19 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     <div class="modal modal-lb-inner">
       <button class="modal-close" id="modal-lb-close">X</button>
       <div class="game-title">LEADERBOARD</div>
-      <div class="game-subtitle">ranking global de jugadores</div>
+      <div class="game-subtitle" id="lb-subtitle">ranking global de jugadores</div>
       <div class="lb-tabs">
         <button class="lb-tab active" data-game="num" onclick="lbSwitchTab('num')">NUMERO</button>
         <button class="lb-tab" data-game="memory" onclick="lbSwitchTab('memory')">MEMORY</button>
         <button class="lb-tab" data-game="puzzle" onclick="lbSwitchTab('puzzle')">PUZZLE</button>
       </div>
       <div class="lb-refresh-row">
+        <div class="lb-month-badge" id="lb-month-badge">&#128197; MES ACTUAL</div>
         <button class="lb-refresh-btn" id="lb-refresh-btn">&#8635; ACTUALIZAR</button>
       </div>
       <div id="lb-content"></div>
       <div class="lb-shared-note">★ RANKING COMPARTIDO ENTRE TODOS LOS JUGADORES ★</div>
+      <div class="lb-reset-note">↻ EL RANKING SE REINICIA AL INICIO DE CADA MES</div>
     </div>
   </div>
 
@@ -556,24 +560,51 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   renderNav();
 
   // ══════════════════════════════════════════════════════════════════
-  // ── LEADERBOARD COMPARTIDO (window.storage shared=true) ──────────
-  // Clave: "lb:{game}:{username_lower}"  →  valor numérico como string
+  // ── LEADERBOARD COMPARTIDO — RENOVACIÓN MENSUAL ───────────────────
+  //
+  // La clave incluye el año y mes actual: "lb:{game}:{YYYY-MM}:{user}"
+  // Al cambiar de mes las claves del mes anterior no coinciden con el
+  // prefijo actual, por lo que el ranking arranca limpio automáticamente.
+  // No se necesita borrar nada manualmente.
   // ══════════════════════════════════════════════════════════════════
-  let lbCurrentTab='num';
+
+  /** Devuelve la cadena del mes actual en formato "YYYY-MM" */
+  function getMonthKey() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return y + '-' + m;
+  }
+
+  /** Nombre legible del mes actual para mostrar en la UI, ej: "Mayo 2025" */
+  function getMonthLabel() {
+    const now = new Date();
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return meses[now.getMonth()] + ' ' + now.getFullYear();
+  }
+
+  /** Actualiza el badge del mes en el modal de leaderboard */
+  function updateMonthBadge() {
+    const el = document.getElementById('lb-month-badge');
+    if (el) el.textContent = '📅 ' + getMonthLabel().toUpperCase();
+  }
+
+  let lbCurrentTab = 'num';
 
   /**
    * Guarda o actualiza el score de un jugador en el leaderboard compartido.
-   * Solo actualiza si el nuevo score es MEJOR que el anterior.
-   * num:    más intentos restantes = mejor
-   * memory: menos movimientos = mejor  (guardamos como negativo para invertir el sort)
-   * puzzle: más completados = mejor
+   * La clave incluye el mes actual → los datos expiran naturalmente al mes siguiente.
+   * Solo actualiza si el nuevo score es MEJOR que el registrado este mes.
+   *   num:    más intentos restantes = mejor
+   *   memory: menos movimientos = mejor
+   *   puzzle: más completados = mejor
    */
   async function lbAddScore(game, username, score) {
     if (!username) return;
-    const key = 'lb:' + game + ':' + username.toLowerCase();
+    const month = getMonthKey();
+    const key = 'lb:' + game + ':' + month + ':' + username.toLowerCase();
     try {
-      // Para memory guardamos movimientos pero comparamos "menos es mejor"
-      // Para num y puzzle "más es mejor"
       let storedVal = null;
       try {
         const existing = await window.storage.get(key, true);
@@ -584,11 +615,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       if (storedVal === null) {
         shouldSave = true;
       } else if (game === 'memory') {
-        // menor cantidad de movimientos es mejor
-        shouldSave = score < storedVal;
+        shouldSave = score < storedVal;   // menos movimientos = mejor
       } else {
-        // mayor score es mejor (num = intentos restantes, puzzle = completados)
-        shouldSave = score > storedVal;
+        shouldSave = score > storedVal;   // más puntaje = mejor
       }
 
       if (shouldSave) {
@@ -596,25 +625,25 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       }
     } catch(err) {
       console.warn('lbAddScore error:', err);
-      // Fallback silencioso — el juego sigue funcionando igual
     }
   }
 
   /**
-   * Carga y renderiza el leaderboard del juego indicado.
-   * Lee todas las claves "lb:{game}:*" del storage compartido.
+   * Carga y renderiza el leaderboard del juego y MES indicados.
+   * Lee todas las claves "lb:{game}:{YYYY-MM}:*" del storage compartido.
    */
   async function lbRender(game) {
+    updateMonthBadge();
     const content = document.getElementById('lb-content');
     content.innerHTML = '<div class="lb-loading"><div class="lb-spinner"></div>CARGANDO...</div>';
 
+    const month = getMonthKey();
     let entries = [];
     try {
-      const prefix = 'lb:' + game + ':';
+      const prefix = 'lb:' + game + ':' + month + ':';
       const result = await window.storage.list(prefix, true);
       const keys = result ? result.keys : [];
 
-      // Leer todos los valores en paralelo
       const reads = keys.map(k => window.storage.get(k, true).catch(() => null));
       const values = await Promise.all(reads);
 
@@ -639,7 +668,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     const labels = { num: 'INTENTOS RESTANTES', memory: 'MOVIMIENTOS', puzzle: 'COMPLETADOS' };
 
     if (!entries.length) {
-      content.innerHTML = '<div class="lb-empty">SIN REGISTROS AUN<br><br>SE EL PRIMERO EN JUGAR</div>';
+      content.innerHTML = '<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
       return;
     }
 
@@ -648,11 +677,10 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       const rankClass = i === 0 ? 'lb-rank-1' : i === 1 ? 'lb-rank-2' : i === 2 ? 'lb-rank-3' : 'lb-rank-rest';
       const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
       const isMe = session && username === session.toLowerCase();
-      const displayScore = score;
       html += '<tr class="' + (isMe ? 'lb-me' : '') + '">'
         + '<td class="lb-rank ' + rankClass + '">' + rankLabel + '</td>'
         + '<td class="lb-name">' + username.toUpperCase() + (isMe ? ' ◀' : '') + '</td>'
-        + '<td class="lb-score">' + displayScore + '</td>'
+        + '<td class="lb-score">' + score + '</td>'
         + '</tr>';
     });
     html += '</tbody></table>';
@@ -667,6 +695,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 
   function openLeaderboard() {
     document.getElementById('modal-leaderboard').classList.add('open');
+    updateMonthBadge();
     lbRender(lbCurrentTab);
   }
 
