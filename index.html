@@ -739,33 +739,355 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ── ROMPECABEZAS ──
   (function(){
     const IMAGES=['https://i.ibb.co/KpQvVHvM/SPOILER-Dibujo-comunidad.jpg','https://i.ibb.co/7Jjk4Zs6/Cxn-Horadeaventura.jpg','https://i.ibb.co/60bZkVv5/SPOILER-121-sin-titulo-20260122021505.jpg','https://i.ibb.co/YT7h7Npy/162-sin-titulo-20260301164032.jpg','https://i.ibb.co/ccSk1rLj/132-sin-titulo-20260131195402.jpg','https://i.ibb.co/LhcLXHP2/384a5a0a39a3ec649601cf3847884682.jpg','https://i.ibb.co/XfZgBfBs/168-sin-titulo.jpg','https://i.ibb.co/Q7DkXgQJ/192-sin-titulo-20260323011907.jpg','https://i.ibb.co/R47NcmKW/52-sin-titulo-20260417140643.jpg','https://i.ibb.co/R49Xkjxw/21-sin-titulo-20260421234240.jpg','https://i.ibb.co/kgFbtysb/23-sin-titulo-20260423233105.jpg'];
-    const GRID_N=4;const MAX_ERRORS=5;
-    let errors=0,won=false,completedCount=0;
-    let pieces=[],boardSlots=[],traySlots=[];
-    let dragPieceIdx=null,dragGhost=null;
-    let imgPool=[],currentImgIdx=-1;
-    function refillPool(){imgPool=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}}
+    const GRID_N=4, MAX_ERRORS=5, SZ=68;
+    let errors=0, won=false, completedCount=0, blocked=false;
+    let pieces=[], boardSlots=[], traySlots=[];
+    // drag state
+    let activeDrag=null; // {pId, sourceEl, ghost, mh, uh, tmh, teh}
+    let imgPool=[], currentImgIdx=-1;
+
+    function refillPool(){
+      imgPool=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);
+      if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}
+    }
     function pickNextImg(){if(!imgPool.length)refillPool();currentImgIdx=imgPool.shift();return currentImgIdx;}
-    function buildErrBar(){const bar=document.getElementById('pz-err-bar');bar.innerHTML='';for(let i=0;i<MAX_ERRORS;i++){const p=document.createElement('div');p.className='pz-err-pip'+(i<errors?' lit':'');bar.appendChild(p);}}
-    const SZ=68;
-    function buildGame(){if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');errors=0;won=false;document.getElementById('pz-msg').textContent='';document.getElementById('pz-msg').className='pz-msg';buildErrBar();const imgIdx=pickNextImg();const img=IMAGES[imgIdx];document.getElementById('pz-cur-thumb').src=img;document.getElementById('pz-completed').textContent=completedCount;const total=GRID_N*GRID_N;pieces=[];for(let i=0;i<total;i++){const row=Math.floor(i/GRID_N),col=i%GRID_N;pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});}const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);const area=document.getElementById('pz-game-area');area.innerHTML='';const boardWrap=document.createElement('div');const board=document.createElement('div');board.className='pz-board';board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';boardSlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.boardIdx=i;setupBoardDrop(cell,i);board.appendChild(cell);boardSlots.push(cell);}boardWrap.appendChild(board);area.appendChild(boardWrap);const tWrap=document.createElement('div');tWrap.className='pz-tray-wrap';const tLbl=document.createElement('div');tLbl.className='pz-tray-label';tLbl.textContent='PIEZAS';tWrap.appendChild(tLbl);const tray=document.createElement('div');tray.className='pz-tray';tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';traySlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-tray-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.trayIdx=i;setupTrayDrop(cell,i);tray.appendChild(cell);traySlots.push(cell);}tWrap.appendChild(tray);area.appendChild(tWrap);shuffled.forEach((pieceId,trayPos)=>{pieces[pieceId].trayPos=trayPos;renderPieceInTray(pieceId,trayPos);});}
-    function makePieceEl(pId){const p=pieces[pId];const el=document.createElement('div');el.className='pz-piece';el.style.backgroundImage='url(\''+p.bg+'\')';el.style.backgroundSize=p.bgSize;el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';el.dataset.pieceId=pId;setupDrag(el,pId);return el;}
-    function renderPieceInTray(pId,trayPos){const cell=traySlots[trayPos];cell.innerHTML='';const el=makePieceEl(pId);cell.appendChild(el);}
-    function renderPieceOnBoard(pId,boardPos){const cell=boardSlots[boardPos];cell.innerHTML='';const el=makePieceEl(pId);if(pieces[pId].placed)el.classList.add('pz-piece-locked');cell.appendChild(el);}
-    function setupDrag(el,pId){el.addEventListener('mousedown',e=>{if(pieces[pId].placed)return;e.preventDefault();startDrag(e.clientX,e.clientY,pId,el);});el.addEventListener('touchstart',e=>{if(pieces[pId].placed)return;e.preventDefault();const t=e.touches[0];startDrag(t.clientX,t.clientY,pId,el);},{passive:false});}
-    function startDrag(cx,cy,pId,el){dragPieceIdx=pId;const p=pieces[pId];el.classList.add('pz-dragging');dragGhost=document.createElement('div');dragGhost.className='pz-ghost-drag';dragGhost.style.width=SZ+'px';dragGhost.style.height=SZ+'px';dragGhost.style.backgroundImage='url(\''+p.bg+'\')';dragGhost.style.backgroundSize=p.bgSize;dragGhost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';dragGhost.style.left=cx+'px';dragGhost.style.top=cy+'px';document.body.appendChild(dragGhost);function onMove(ex,ey){dragGhost.style.left=ex+'px';dragGhost.style.top=ey+'px';}function onEnd(ex,ey){document.removeEventListener('mousemove',mh);document.removeEventListener('mouseup',uh);document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',teh);if(dragGhost)dragGhost.remove();dragGhost=null;el.classList.remove('pz-dragging');const drop=document.elementFromPoint(ex,ey);handleDropOn(drop,pId);dragPieceIdx=null;}const mh=e=>onMove(e.clientX,e.clientY);const uh=e=>onEnd(e.clientX,e.clientY);const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};document.addEventListener('mousemove',mh);document.addEventListener('mouseup',uh);document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',teh,{passive:false});}
-    function handleDropOn(drop,pId){if(!drop)return;const boardCell=drop.closest('[data-board-idx]');const trayCell=drop.closest('[data-tray-idx]');if(boardCell)tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));else if(trayCell)returnToTray(pId,parseInt(trayCell.dataset.trayIdx));}
-    function tryPlaceOnBoard(pId,bIdx){const p=pieces[pId];if(won||p.placed)return;const occupant=boardSlots[bIdx].querySelector('.pz-piece');if(occupant){const occId=parseInt(occupant.dataset.pieceId);if(pieces[occId].placed)return;returnToTray(occId,p.trayPos!=null?p.trayPos:findFreeTraySlot());}if(bIdx===p.id){p.placed=true;p.boardPos=bIdx;if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';p.trayPos=null;}renderPieceOnBoard(pId,bIdx);boardSlots[bIdx].classList.add('pz-correct-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);checkWin();}else{if(errors>=MAX_ERRORS)return;errors++;buildErrBar();boardSlots[bIdx].classList.add('pz-error-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);if(errors>=MAX_ERRORS&&!won){document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES - intenta de nuevo';}}}
-    function returnToTray(pId,tIdx){const p=pieces[pId];if(p.trayPos!=null)traySlots[p.trayPos].innerHTML='';if(p.boardPos!=null)boardSlots[p.boardPos].innerHTML='';p.boardPos=null;p.placed=false;let slot=tIdx!=null?tIdx:findFreeTraySlot();if(traySlots[slot]&&traySlots[slot].querySelector('.pz-piece'))slot=findFreeTraySlot();p.trayPos=slot;renderPieceInTray(pId,slot);}
-    function findFreeTraySlot(){for(let i=0;i<traySlots.length;i++){if(!traySlots[i].querySelector('.pz-piece'))return i;}return 0;}
-    function setupBoardDrop(cell,bIdx){cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)tryPlaceOnBoard(dragPieceIdx,bIdx);});}
-    function setupTrayDrop(cell,tIdx){cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('pz-drag-over');});cell.addEventListener('dragleave',()=>cell.classList.remove('pz-drag-over'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('pz-drag-over');if(dragPieceIdx!=null)returnToTray(dragPieceIdx,tIdx);});}
-    function checkWin(){if(!pieces.every(p=>p.placed))return;won=true;completedCount++;document.getElementById('pz-completed').textContent=completedCount;const user=getSession();if(user)lbAddScore('puzzle',user,completedCount);const tempPool=[...imgPool];if(!tempPool.length){const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];const banner=document.getElementById('pz-next-banner');const countEl=document.getElementById('pz-next-countdown');let count=3;countEl.textContent=count;banner.classList.add('show');window._pzCountdown=setInterval(()=>{count--;if(count<=0){clearInterval(window._pzCountdown);window._pzCountdown=null;banner.classList.remove('show');buildGame();}else{countEl.textContent=count;}},1000);}
-    document.getElementById('pz-restart-btn').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();});
-    document.getElementById('game-card-3').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();document.getElementById('modal-puzzle').classList.add('open');});
-    function closePuzzle(){document.getElementById('modal-puzzle').classList.remove('open');if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');}
+
+    function buildErrBar(){
+      const bar=document.getElementById('pz-err-bar');
+      bar.innerHTML='';
+      for(let i=0;i<MAX_ERRORS;i++){
+        const p=document.createElement('div');
+        p.className='pz-err-pip'+(i<errors?' lit':'');
+        bar.appendChild(p);
+      }
+    }
+
+    function buildGame(){
+      // Cancel any running countdown
+      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
+      // Cancel any active drag cleanly
+      cancelActiveDrag();
+      document.getElementById('pz-next-banner').classList.remove('show');
+      errors=0; won=false; blocked=false;
+      document.getElementById('pz-msg').textContent='';
+      document.getElementById('pz-msg').className='pz-msg';
+      buildErrBar();
+
+      const imgIdx=pickNextImg();
+      const img=IMAGES[imgIdx];
+      document.getElementById('pz-cur-thumb').src=img;
+      document.getElementById('pz-completed').textContent=completedCount;
+
+      const total=GRID_N*GRID_N;
+      pieces=[];
+      for(let i=0;i<total;i++){
+        const row=Math.floor(i/GRID_N), col=i%GRID_N;
+        pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});
+      }
+
+      const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);
+      const area=document.getElementById('pz-game-area');
+      area.innerHTML='';
+
+      // Build board
+      const boardWrap=document.createElement('div');
+      const board=document.createElement('div');
+      board.className='pz-board';
+      board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';
+      boardSlots=[];
+      for(let i=0;i<total;i++){
+        const cell=document.createElement('div');
+        cell.className='pz-cell';
+        cell.style.width=SZ+'px';
+        cell.style.height=SZ+'px';
+        cell.dataset.boardIdx=i;
+        board.appendChild(cell);
+        boardSlots.push(cell);
+      }
+      boardWrap.appendChild(board);
+      area.appendChild(boardWrap);
+
+      // Build tray
+      const tWrap=document.createElement('div');
+      tWrap.className='pz-tray-wrap';
+      const tLbl=document.createElement('div');
+      tLbl.className='pz-tray-label';
+      tLbl.textContent='PIEZAS';
+      tWrap.appendChild(tLbl);
+      const tray=document.createElement('div');
+      tray.className='pz-tray';
+      tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';
+      traySlots=[];
+      for(let i=0;i<total;i++){
+        const cell=document.createElement('div');
+        cell.className='pz-tray-cell';
+        cell.style.width=SZ+'px';
+        cell.style.height=SZ+'px';
+        cell.dataset.trayIdx=i;
+        tray.appendChild(cell);
+        traySlots.push(cell);
+      }
+      tWrap.appendChild(tray);
+      area.appendChild(tWrap);
+
+      // Place pieces in tray
+      shuffled.forEach((pieceId,trayPos)=>{
+        pieces[pieceId].trayPos=trayPos;
+        renderPieceInTray(pieceId,trayPos);
+      });
+    }
+
+    function makePieceEl(pId){
+      const p=pieces[pId];
+      const el=document.createElement('div');
+      el.className='pz-piece';
+      el.style.backgroundImage='url(\''+p.bg+'\')';
+      el.style.backgroundSize=p.bgSize;
+      el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';
+      el.dataset.pieceId=pId;
+      if(!p.placed) setupDrag(el,pId);
+      return el;
+    }
+
+    function renderPieceInTray(pId,trayPos){
+      const cell=traySlots[trayPos];
+      cell.innerHTML='';
+      cell.appendChild(makePieceEl(pId));
+    }
+
+    function renderPieceOnBoard(pId,boardPos){
+      const cell=boardSlots[boardPos];
+      cell.innerHTML='';
+      const el=makePieceEl(pId);
+      if(pieces[pId].placed) el.classList.add('pz-piece-locked');
+      cell.appendChild(el);
+    }
+
+    // ── DRAG ──────────────────────────────────────────────────────────
+
+    function cancelActiveDrag(){
+      if(!activeDrag) return;
+      const {sourceEl,ghost,mh,uh,tmh,teh}=activeDrag;
+      document.removeEventListener('mousemove',mh);
+      document.removeEventListener('mouseup',uh);
+      document.removeEventListener('touchmove',tmh);
+      document.removeEventListener('touchend',teh);
+      document.removeEventListener('mouseleave',mh); // safety
+      if(ghost && ghost.parentNode) ghost.remove();
+      if(sourceEl) sourceEl.classList.remove('pz-dragging');
+      activeDrag=null;
+    }
+
+    function setupDrag(el,pId){
+      el.addEventListener('mousedown',e=>{
+        if(pieces[pId].placed||won||blocked) return;
+        e.preventDefault();
+        startDrag(e.clientX,e.clientY,pId,el);
+      });
+      el.addEventListener('touchstart',e=>{
+        if(pieces[pId].placed||won||blocked) return;
+        e.preventDefault();
+        const t=e.touches[0];
+        startDrag(t.clientX,t.clientY,pId,el);
+      },{passive:false});
+    }
+
+    function startDrag(cx,cy,pId,el){
+      // Cancel any leftover drag
+      cancelActiveDrag();
+
+      const p=pieces[pId];
+      el.classList.add('pz-dragging');
+
+      // Ghost: centered under cursor using transform
+      const ghost=document.createElement('div');
+      ghost.className='pz-ghost-drag';
+      ghost.style.width=SZ+'px';
+      ghost.style.height=SZ+'px';
+      ghost.style.backgroundImage='url(\''+p.bg+'\')';
+      ghost.style.backgroundSize=p.bgSize;
+      ghost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';
+      // Override the CSS transform to center on cursor:
+      ghost.style.transform='translate(-50%,-50%)';
+      ghost.style.left=cx+'px';
+      ghost.style.top=cy+'px';
+      document.body.appendChild(ghost);
+
+      function onMove(ex,ey){
+        ghost.style.left=ex+'px';
+        ghost.style.top=ey+'px';
+      }
+
+      function onEnd(ex,ey){
+        cancelActiveDrag();
+        // Find drop target (ghost is pointer-events:none so elementFromPoint works)
+        const drop=document.elementFromPoint(ex,ey);
+        handleDropOn(drop,pId);
+      }
+
+      const mh=e=>onMove(e.clientX,e.clientY);
+      // FIX: mouseleave on window also ends drag so ghost doesn't get stuck
+      const uh=e=>onEnd(e.clientX,e.clientY);
+      const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};
+      const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};
+
+      document.addEventListener('mousemove',mh);
+      document.addEventListener('mouseup',uh);
+      document.addEventListener('touchmove',tmh,{passive:false});
+      document.addEventListener('touchend',teh,{passive:false});
+
+      activeDrag={pId,sourceEl:el,ghost,mh,uh,tmh,teh};
+    }
+
+    // ── DROP LOGIC ────────────────────────────────────────────────────
+
+    function handleDropOn(drop,pId){
+      if(!drop) return;
+      const boardCell=drop.closest('[data-board-idx]');
+      const trayCell=drop.closest('[data-tray-idx]');
+      if(boardCell) tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));
+      else if(trayCell) returnToTray(pId,parseInt(trayCell.dataset.trayIdx));
+      else returnPieceToOrigin(pId); // dropped outside any valid zone
+    }
+
+    function returnPieceToOrigin(pId){
+      const p=pieces[pId];
+      // Already tracked — just re-render in its current slot
+      if(p.trayPos!=null) renderPieceInTray(pId,p.trayPos);
+      else if(p.boardPos!=null) renderPieceOnBoard(pId,p.boardPos);
+    }
+
+    function tryPlaceOnBoard(pId,bIdx){
+      const p=pieces[pId];
+      if(won||p.placed||blocked) return;
+
+      const occupantEl=boardSlots[bIdx].querySelector('.pz-piece');
+      if(occupantEl){
+        const occId=parseInt(occupantEl.dataset.pieceId);
+        if(pieces[occId].placed) {
+          // Can't displace a locked piece — return dragged piece to origin
+          returnPieceToOrigin(pId);
+          return;
+        }
+        // Swap occupant back to a free tray slot (NOT the dragged piece's slot,
+        // because we're about to vacate it only if placement is correct)
+        const freeTray=findFreeTraySlot(pId); // exclude pId's current trayPos
+        returnToTray(occId, freeTray);
+      }
+
+      if(bIdx===p.id){
+        // ✅ Correct placement
+        if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; p.trayPos=null; }
+        if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; p.boardPos=null; }
+        p.placed=true;
+        p.boardPos=bIdx;
+        renderPieceOnBoard(pId,bIdx);
+        boardSlots[bIdx].classList.add('pz-correct-flash');
+        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);
+        checkWin();
+      } else {
+        // ❌ Wrong placement
+        if(errors>=MAX_ERRORS){ returnPieceToOrigin(pId); return; }
+        errors++;
+        buildErrBar();
+        boardSlots[bIdx].classList.add('pz-error-flash');
+        setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);
+        returnPieceToOrigin(pId);
+        if(errors>=MAX_ERRORS){
+          blocked=true;
+          document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES — presiona NUEVO JUEGO';
+        }
+      }
+    }
+
+    function returnToTray(pId,preferredSlot){
+      const p=pieces[pId];
+      // Vacate current locations
+      if(p.trayPos!=null){ traySlots[p.trayPos].innerHTML=''; }
+      if(p.boardPos!=null){ boardSlots[p.boardPos].innerHTML=''; }
+      p.boardPos=null;
+      p.placed=false;
+
+      // Find a valid slot
+      let slot=preferredSlot!=null?preferredSlot:findFreeTraySlot();
+      // If preferred slot is taken by someone else, find a free one
+      if(traySlots[slot] && traySlots[slot].querySelector('.pz-piece')){
+        slot=findFreeTraySlot();
+      }
+      p.trayPos=slot;
+      renderPieceInTray(pId,slot);
+    }
+
+    // FIX: returns -1 if no free slot (caller must handle), never blindly returns 0
+    function findFreeTraySlot(excludePId){
+      // First pass: find a genuinely empty cell
+      for(let i=0;i<traySlots.length;i++){
+        if(!traySlots[i].querySelector('.pz-piece')) return i;
+      }
+      // Fallback: find a slot occupied only by the piece being displaced
+      // (This shouldn't happen in normal gameplay but is a safety net)
+      if(excludePId!=null){
+        const ep=pieces[excludePId];
+        if(ep.trayPos!=null) return ep.trayPos;
+      }
+      return 0; // absolute last resort
+    }
+
+    function checkWin(){
+      if(!pieces.every(p=>p.placed)) return;
+      won=true;
+      completedCount++;
+      document.getElementById('pz-completed').textContent=completedCount;
+      const user=getSession();
+      if(user) lbAddScore('puzzle',user,completedCount);
+
+      // Pick next image preview from the remaining pool (without consuming it)
+      const tempPool=[...imgPool];
+      if(!tempPool.length){
+        const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);
+        if(arr[0]===currentImgIdx) arr.push(arr.shift());
+        tempPool.push(...arr);
+      }
+      const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);
+      document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];
+
+      const banner=document.getElementById('pz-next-banner');
+      const countEl=document.getElementById('pz-next-countdown');
+      let count=3;
+      countEl.textContent=count;
+      banner.classList.add('show');
+      window._pzCountdown=setInterval(()=>{
+        count--;
+        if(count<=0){
+          clearInterval(window._pzCountdown);
+          window._pzCountdown=null;
+          banner.classList.remove('show');
+          buildGame();
+        } else {
+          countEl.textContent=count;
+        }
+      },1000);
+    }
+
+    document.getElementById('pz-restart-btn').addEventListener('click',()=>{
+      completedCount=0; imgPool=[]; currentImgIdx=-1;
+      buildGame();
+    });
+    document.getElementById('game-card-3').addEventListener('click',()=>{
+      completedCount=0; imgPool=[]; currentImgIdx=-1;
+      buildGame();
+      document.getElementById('modal-puzzle').classList.add('open');
+    });
+    function closePuzzle(){
+      document.getElementById('modal-puzzle').classList.remove('open');
+      cancelActiveDrag();
+      if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}
+      document.getElementById('pz-next-banner').classList.remove('show');
+    }
     document.getElementById('modal-puzzle-close').addEventListener('click',closePuzzle);
-    document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
+    document.getElementById('modal-puzzle').addEventListener('click',(e)=>{
+      if(e.target===document.getElementById('modal-puzzle')) closePuzzle();
+    });
   })();
   </script>
 </body>
