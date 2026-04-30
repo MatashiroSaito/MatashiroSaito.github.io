@@ -4,10 +4,86 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KbrosGames</title>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       🔥 PASO 1: Ve a https://console.firebase.google.com
+       🔥 PASO 2: Crea un proyecto → Agrega una app Web
+       🔥 PASO 3: En "Firestore Database" → Crear base de datos (modo prueba)
+       🔥 PASO 4: Reemplaza los valores de firebaseConfig abajo con los tuyos
+       ══════════════════════════════════════════════════════════════ -->
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, orderBy, limit, where, Timestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ╔══════════════════════════════════════════════════════╗
+    // ║  🔥 REEMPLAZA ESTO CON TU CONFIG DE FIREBASE 🔥     ║
+    // ╚══════════════════════════════════════════════════════╝
+    const firebaseConfig = {
+      apiKey:            "TU_API_KEY",
+      authDomain:        "TU_PROJECT.firebaseapp.com",
+      projectId:         "TU_PROJECT_ID",
+      storageBucket:     "TU_PROJECT.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId:             "TU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ── Mes actual como clave (ej: "202505") ──
+    function monthKey() {
+      const n = new Date();
+      return n.getFullYear() + String(n.getMonth()+1).padStart(2,'0');
+    }
+
+    // ── Guarda / actualiza score en Firestore ──
+    // collection: scores/{game}/{monthKey}/{username}
+    async function fbSaveScore(game, username, data) {
+      if (!username) return;
+      const mk = monthKey();
+      const ref = doc(db, 'scores', game, mk, username.toLowerCase());
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const old = snap.data().score ?? 0;
+        // memory → menor es mejor; resto → mayor es mejor
+        if (game === 'memory' && data.score > 0 && old > 0 && data.score >= old) return;
+        if (game !== 'memory' && data.score <= old) return;
+      }
+      await setDoc(ref, { ...data, username, updatedAt: Timestamp.now() });
+    }
+
+    // ── Registra al jugador con score 0 si no existe este mes ──
+    async function fbRegisterPlayer(game, username) {
+      if (!username) return;
+      const mk = monthKey();
+      const ref = doc(db, 'scores', game, mk, username.toLowerCase());
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, { score: 0, username, updatedAt: Timestamp.now() });
+      }
+    }
+
+    // ── Lee el leaderboard de un juego/mes ──
+    async function fbGetLeaderboard(game) {
+      const mk = monthKey();
+      const col = collection(db, 'scores', game, mk);
+      const q = query(col, orderBy('score', game === 'memory' ? 'asc' : 'desc'), limit(20));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data());
+    }
+
+    // ── Exponer funciones al scope global ──
+    window._fb = { fbSaveScore, fbRegisterPlayer, fbGetLeaderboard, monthKey };
+
+    window.dispatchEvent(new Event('fbReady'));
+  </script>
+
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{--neon-cyan:#00f5ff;--neon-purple:#bf00ff;--neon-pink:#ff007f;--neon-gold:#ffd700;--dark-bg:#03050f;--card-bg:rgba(10,15,40,0.85);--text-main:#e8f0ff;--text-muted:#7a8ab0;--border-glow:rgba(0,245,255,0.25);}
+:root{--neon-cyan:#00f5ff;--neon-purple:#bf00ff;--neon-pink:#ff007f;--neon-gold:#ffd700;--neon-green:#00ff88;--dark-bg:#03050f;--card-bg:rgba(10,15,40,0.85);--text-main:#e8f0ff;--text-muted:#7a8ab0;--border-glow:rgba(0,245,255,0.25);}
 body{font-family:'Rajdhani',sans-serif;background:var(--dark-bg);color:var(--text-main);min-height:100vh;overflow-x:hidden;}
 #stars-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
 .nebula{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;}
@@ -210,8 +286,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-restart-btn:hover{background:rgba(0,245,255,0.1);box-shadow:0 0 10px rgba(0,245,255,0.2);}
 .pz-ghost-drag{position:fixed;pointer-events:none;z-index:9999;border-radius:6px;opacity:0.85;transform:translate(-50%,-50%);background-size:cover;}
 
-/* ── LEADERBOARD ── */
-.modal-lb-inner{width:560px;max-width:95vw;}
+/* ══ LEADERBOARD GLOBAL ══ */
+.modal-lb-inner{width:600px;max-width:95vw;}
 .lb-tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border-glow);border-radius:12px;overflow:hidden;}
 .lb-tab{flex:1;background:none;border:none;color:var(--text-muted);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:9px;cursor:pointer;transition:all 0.2s;}
 .lb-tab.active{background:linear-gradient(135deg,rgba(0,245,255,0.12),rgba(191,0,255,0.12));color:var(--neon-gold);}
@@ -231,10 +307,23 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .lb-refresh-btn{background:none;border:1px solid var(--border-glow);color:var(--text-muted);border-radius:14px;padding:4px 12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
 .lb-refresh-btn:hover{border-color:var(--neon-cyan);color:var(--neon-cyan);}
 .lb-month-badge{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;color:var(--neon-purple);background:rgba(191,0,255,0.1);border:1px solid rgba(191,0,255,0.3);border-radius:10px;padding:3px 10px;}
-.lb-shared-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-purple);letter-spacing:1px;margin-top:1rem;opacity:0.7;}
+.lb-loading{text-align:center;padding:2rem;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;color:var(--neon-cyan);animation:pulse 1s infinite;}
+.lb-global-note{text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--neon-green);letter-spacing:1px;margin-top:1rem;opacity:0.8;}
 .lb-reset-note{text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-top:0.4rem;opacity:0.5;}
+.lb-config-warn{background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.4);border-radius:10px;padding:1rem;text-align:center;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;color:#ffa500;line-height:1.7;}
+.lb-config-warn a{color:var(--neon-cyan);text-decoration:none;}
 .lb-played-badge{font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;padding:2px 6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-left:6px;vertical-align:middle;}
-.lb-seed-badge{font-family:'Orbitron',monospace;font-size:8px;color:var(--neon-purple);letter-spacing:1px;padding:2px 6px;border:1px solid rgba(191,0,255,0.3);border-radius:8px;margin-left:6px;vertical-align:middle;}
+
+/* ══ SETUP GUIDE MODAL ══ */
+.modal-setup-inner{width:520px;max-width:95vw;}
+.setup-step{display:flex;gap:14px;margin-bottom:1.4rem;align-items:flex-start;}
+.setup-num{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:var(--neon-cyan);min-width:28px;text-shadow:0 0 10px rgba(0,245,255,0.5);}
+.setup-text{font-size:14px;color:var(--text-muted);line-height:1.6;}
+.setup-text strong{color:var(--text-main);}
+.setup-text code{background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:12px;color:var(--neon-cyan);}
+.setup-text a{color:var(--neon-cyan);text-decoration:none;}
+.setup-text a:hover{text-decoration:underline;}
+.setup-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(0,245,255,0.2),transparent);margin:0.3rem 0 1.4rem;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -274,6 +363,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
           <div class="sidebar-item"><span class="si-icon">&#127942;</span> Logros</div>
           <div class="sidebar-item" id="btn-actualizaciones"><span class="si-icon">&#128260;</span> Actualizaciones<span class="badge gold">!</span></div>
           <div class="sidebar-item" id="btn-leaderboard"><span class="si-icon">&#127941;</span> Leaderboard</div>
+          <div class="sidebar-item" id="btn-setup"><span class="si-icon">&#128293;</span> Firebase Setup</div>
           <div class="sidebar-item"><span class="si-icon">&#127922;</span> Random</div>
         </div>
       </aside>
@@ -332,6 +422,51 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     </div>
   </div>
 
+  <!-- MODAL FIREBASE SETUP -->
+  <div class="modal-overlay" id="modal-setup">
+    <div class="modal modal-setup-inner">
+      <button class="modal-close" id="modal-setup-close">X</button>
+      <div class="game-title">🔥 FIREBASE SETUP</div>
+      <div class="game-subtitle">conecta el leaderboard global en 5 pasos</div>
+
+      <div class="setup-step">
+        <div class="setup-num">1</div>
+        <div class="setup-text">Ve a <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> e inicia sesión con tu cuenta Google. Luego haz clic en <strong>Agregar proyecto</strong> y dale un nombre (ej: <code>kbrosgames</code>).</div>
+      </div>
+      <div class="setup-divider"></div>
+      <div class="setup-step">
+        <div class="setup-num">2</div>
+        <div class="setup-text">Dentro del proyecto ve a <strong>Firestore Database</strong> → <strong>Crear base de datos</strong> → elige <strong>Modo de prueba</strong> → selecciona la región más cercana (ej: <code>us-central1</code>) → Listo.</div>
+      </div>
+      <div class="setup-divider"></div>
+      <div class="setup-step">
+        <div class="setup-num">3</div>
+        <div class="setup-text">En el menú lateral haz clic en el ⚙️ de <strong>Configuración del proyecto</strong>. Baja hasta <strong>Tus apps</strong> → haz clic en el icono <code>&lt;/&gt;</code> (Web) → registra la app con cualquier nombre.</div>
+      </div>
+      <div class="setup-divider"></div>
+      <div class="setup-step">
+        <div class="setup-num">4</div>
+        <div class="setup-text">Firebase te mostrará un objeto <code>firebaseConfig</code> con tus claves. <strong>Copia todos esos valores</strong> y pégalos reemplazando el bloque <code>firebaseConfig</code> en el <code>&lt;script type="module"&gt;</code> al inicio del HTML.</div>
+      </div>
+      <div class="setup-divider"></div>
+      <div class="setup-step">
+        <div class="setup-num">5</div>
+        <div class="setup-text">En Firestore → <strong>Reglas</strong>, pega esto y publica:<br><br>
+          <code>rules_version = '2';<br>
+          service cloud.firestore {<br>
+          &nbsp;&nbsp;match /databases/{db}/documents {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;match /scores/{game}/{month}/{user} {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if true;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+          &nbsp;&nbsp;}<br>
+          }</code><br><br>
+          ¡Listo! El leaderboard ya es global 🌍
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL ACTUALIZACIONES -->
   <div class="modal-overlay" id="modal-actualizaciones">
     <div class="modal modal-act-inner">
@@ -341,19 +476,19 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       <div class="act-cards">
         <div class="act-card">
           <div class="act-card-header"><span class="act-icon">&#128290;</span><div><div class="act-name">ADIVINA EL NUMERO</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Tienes <strong>5 intentos</strong> para adivinar un numero secreto del 1 al 100. Despues de cada intento el juego te dice si tu numero es muy alto o muy bajo.</p>
+          <p class="act-desc">Tienes <strong>5 intentos</strong> para adivinar un numero secreto del 1 al 100.</p>
           <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
         <div class="act-divider"></div>
         <div class="act-card">
           <div class="act-card-header"><span class="act-icon">&#127183;</span><div><div class="act-name">MEMORY</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Encuentra todos los <strong>pares de cartas</strong> ocultas con ilustraciones. Tres dificultades: Facil (6 pares), Normal (8 pares) y Dificil (10 pares).</p>
+          <p class="act-desc">Encuentra todos los <strong>pares de cartas</strong> ocultas. Tres dificultades.</p>
           <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
         <div class="act-divider"></div>
         <div class="act-card">
           <div class="act-card-header"><span class="act-icon">&#129513;</span><div><div class="act-name">ROMPECABEZAS</div><span class="act-tag">PUZZLE</span></div></div>
-          <p class="act-desc">Arrastra las <strong>piezas al tablero</strong> 4x4. Al completar cada puzzle, el siguiente aparece automaticamente con una <strong>imagen aleatoria</strong>.</p>
+          <p class="act-desc">Arrastra las <strong>piezas al tablero</strong> 4x4 con imágenes en cadena.</p>
           <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
         </div>
       </div>
@@ -499,18 +634,18 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     <div class="modal modal-lb-inner">
       <button class="modal-close" id="modal-lb-close">X</button>
       <div class="game-title">LEADERBOARD</div>
-      <div class="game-subtitle" id="lb-subtitle">ranking global de jugadores</div>
+      <div class="game-subtitle">ranking global · todos los jugadores</div>
       <div class="lb-tabs">
-        <button class="lb-tab active" data-game="num" onclick="lbSwitchTab('num')">NUMERO</button>
+        <button class="lb-tab active" data-game="num" onclick="lbSwitchTab('num')">NÚMERO</button>
         <button class="lb-tab" data-game="memory" onclick="lbSwitchTab('memory')">MEMORY</button>
         <button class="lb-tab" data-game="puzzle" onclick="lbSwitchTab('puzzle')">PUZZLE</button>
       </div>
       <div class="lb-refresh-row">
-        <div class="lb-month-badge" id="lb-month-badge">&#128197; MES ACTUAL</div>
-        <button class="lb-refresh-btn" id="lb-refresh-btn">&#8635; ACTUALIZAR</button>
+        <div class="lb-month-badge" id="lb-month-badge">📅 MES ACTUAL</div>
+        <button class="lb-refresh-btn" id="lb-refresh-btn">⟳ ACTUALIZAR</button>
       </div>
-      <div id="lb-content"></div>
-      <div class="lb-shared-note">★ RANKING LOCAL — GUARDADO EN ESTE NAVEGADOR ★</div>
+      <div id="lb-content"><div class="lb-loading">CARGANDO...</div></div>
+      <div class="lb-global-note">🌍 RANKING GLOBAL — FIREBASE FIRESTORE</div>
       <div class="lb-reset-note">↻ EL RANKING SE REINICIA AL INICIO DE CADA MES</div>
     </div>
   </div>
@@ -533,11 +668,11 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ── SIDEBAR ──
   document.querySelectorAll('.sidebar-item').forEach(item=>{item.addEventListener('click',function(){document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active');});});
 
-  // ── SISTEMA DE USUARIOS ──
+  // ── USUARIOS (localStorage — solo autenticación local) ──
   const STORAGE_KEY='kbros_users';
   const SESSION_KEY='kbros_session';
   function getUsers(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch(e){return{};}}
-  function saveUsers(users){localStorage.setItem(STORAGE_KEY,JSON.stringify(users));}
+  function saveUsers(u){localStorage.setItem(STORAGE_KEY,JSON.stringify(u));}
   function getSession(){return localStorage.getItem(SESSION_KEY)||null;}
   function saveSession(name){localStorage.setItem(SESSION_KEY,name);}
   function clearSession(){localStorage.removeItem(SESSION_KEY);}
@@ -556,19 +691,28 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.getElementById('nav-actions').addEventListener('click',e=>{if(e.target&&e.target.id==='btn-entrar')openAuth();});
   renderNav();
 
-  // ══════════════════════════════════════════════════════════════════
-  // ── LEADERBOARD — localStorage (funciona siempre, sin backend) ───
-  // ══════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════
+  // ── LEADERBOARD — Firebase Firestore (global, todos los jugadores) ───
+  // ══════════════════════════════════════════════════════════════════════
 
-  function getMonthKey(){
-    const now=new Date();
-    return now.getFullYear()+String(now.getMonth()+1).padStart(2,'0');
+  let fbReady = false;
+  window.addEventListener('fbReady', () => { fbReady = true; });
+
+  function fbConfigured(){
+    // Detecta si aún tiene los valores placeholder
+    try {
+      const scripts = document.querySelectorAll('script[type="module"]');
+      for(const s of scripts){
+        if(s.textContent.includes('"TU_API_KEY"')) return false;
+      }
+    } catch(e){}
+    return true;
   }
 
   function getMonthLabel(){
-    const now=new Date();
-    const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    return meses[now.getMonth()]+' '+now.getFullYear();
+    const n=new Date();
+    const m=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return m[n.getMonth()]+' '+n.getFullYear();
   }
 
   function updateMonthBadge(){
@@ -576,126 +720,75 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     if(el) el.textContent='📅 '+getMonthLabel().toUpperCase();
   }
 
-  // Clave de localStorage para un jugador/juego/mes
-  function lbKey(game,username){
-    return 'lb_'+game+'_'+getMonthKey()+'_'+username.toLowerCase();
-  }
-
-  // Guarda score solo si mejora el anterior
-  function lbAddScore(game,username,data){
-    if(!username) return;
-    const key=lbKey(game,username);
+  // Wrapper seguro — si Firebase no está configurado, usa localStorage como fallback
+  async function safeAddScore(game, username, data){
+    if(fbReady && fbConfigured()){
+      try{ await window._fb.fbSaveScore(game, username, data); return; }catch(e){ console.warn('Firebase error:', e); }
+    }
+    // Fallback localStorage
+    const key='lb_'+game+'_'+username.toLowerCase();
     const raw=localStorage.getItem(key);
-    let storedScore=null;
-    if(raw){try{storedScore=JSON.parse(raw).score;}catch(e){storedScore=parseFloat(raw)||null;}}
-    let shouldSave=false;
-    if(storedScore===null){shouldSave=true;}
-    else if(game==='memory'){shouldSave=data.score>0&&data.score<storedScore;}
-    else{shouldSave=data.score>storedScore;}
-    if(shouldSave) localStorage.setItem(key,JSON.stringify(data));
-  }
-
-  // Registra jugador con score 0 si no tiene entrada este mes
-  function lbRegisterPlayer(game,username){
-    if(!username) return;
-    const key=lbKey(game,username);
-    if(!localStorage.getItem(key)){
-      localStorage.setItem(key,JSON.stringify({score:0}));
+    let oldScore=raw?JSON.parse(raw).score:null;
+    if(oldScore===null||(game==='memory'?data.score<oldScore:data.score>oldScore)){
+      localStorage.setItem(key,JSON.stringify({...data,username}));
     }
   }
 
-  // Datos de muestra — se insertan si el leaderboard del mes está vacío
-  const LB_SEED={
-    num:[
-      {username:'Kbros',score:5,intentosRestantes:5,intentosUsados:0},
-    ],
-    memory:[
-      {username:'Kbros',score:52,movimientos:52,fallos:18},
-    ],
-    puzzle:[
-      {username:'Kbros',score:1,completados:1,errores:4},
-    ]
-  };
-
-  const SEED_USERS=new Set(['kbros']);
-
-  // Siembra datos de muestra si este mes no tiene ninguna entrada
-  function lbEnsureSeed(game){
-    const month=getMonthKey();
-    const prefix='lb_'+game+'_'+month+'_';
-    // Siempre garantizar que Kbros (bot) este presente
-    const entries=LB_SEED[game]||[];
-    entries.forEach(e=>{
-      const key=prefix+e.username.toLowerCase();
-      if(!localStorage.getItem(key)){
-        localStorage.setItem(key,JSON.stringify(e));
-      }
-    });
+  async function safeRegisterPlayer(game, username){
+    if(fbReady && fbConfigured()){
+      try{ await window._fb.fbRegisterPlayer(game, username); return; }catch(e){ console.warn('Firebase error:', e); }
+    }
+    const key='lb_'+game+'_'+username.toLowerCase();
+    if(!localStorage.getItem(key)) localStorage.setItem(key,JSON.stringify({score:0,username}));
   }
 
-  // Lee todas las entradas de un juego/mes desde localStorage
-  function lbGetAll(game){
-    const month=getMonthKey();
-    const prefix='lb_'+game+'_'+month+'_';
+  async function safeGetLeaderboard(game){
+    if(fbReady && fbConfigured()){
+      try{ return await window._fb.fbGetLeaderboard(game); }catch(e){ console.warn('Firebase error:', e); }
+    }
+    // Fallback localStorage
+    const prefix='lb_'+game+'_';
     const entries=[];
     for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i);
-      if(key&&key.startsWith(prefix)){
-        const username=key.slice(prefix.length);
-        if(!username) continue;
-        try{
-          const payload=JSON.parse(localStorage.getItem(key));
-          entries.push({username,...payload});
-        }catch(e){
-          const val=parseFloat(localStorage.getItem(key));
-          if(!isNaN(val)) entries.push({username,score:val});
-        }
+      const k=localStorage.key(i);
+      if(k&&k.startsWith(prefix)){
+        try{ const d=JSON.parse(localStorage.getItem(k)); entries.push(d); }catch(e){}
       }
     }
     return entries;
   }
 
-  // Limpia entradas de meses anteriores para no acumular basura
-  function lbCleanOldMonths(){
-    const current=getMonthKey();
-    const toDelete=[];
-    for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i);
-      if(!key||!key.startsWith('lb_')) continue;
-      // formato: lb_GAME_YYYYMM_username
-      const parts=key.split('_');
-      if(parts.length>=4){
-        const monthInKey=parts[2];
-        if(monthInKey&&monthInKey!==current&&/^\d{6}$/.test(monthInKey)){
-          toDelete.push(key);
-        }
-      }
-    }
-    toDelete.forEach(k=>localStorage.removeItem(k));
-  }
-
-  // Render principal del leaderboard
-  function lbRender(game){
+  // ── Render del leaderboard ──
+  async function lbRender(game){
     updateMonthBadge();
-    lbCleanOldMonths();
-    lbEnsureSeed(game);
-
     const content=document.getElementById('lb-content');
+
+    if(!fbConfigured()){
+      content.innerHTML=`<div class="lb-config-warn">
+        🔥 <strong>FIREBASE NO CONFIGURADO</strong><br><br>
+        El leaderboard aún es local. Para hacerlo global<br>
+        haz clic en <strong>"Firebase Setup"</strong> en el menú lateral<br>
+        y sigue los 5 pasos — solo toma 5 minutos.<br><br>
+        <a href="#" onclick="document.getElementById('modal-setup').classList.add('open')">VER GUÍA DE CONFIGURACIÓN →</a>
+      </div>`;
+      return;
+    }
+
+    content.innerHTML='<div class="lb-loading">CARGANDO RANKING GLOBAL...</div>';
     const session=getSession();
+    let entries=await safeGetLeaderboard(game);
 
-    let entries=lbGetAll(game);
-
-    if(!entries.length){
+    if(!entries||!entries.length){
       content.innerHTML='<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
       return;
     }
 
-    // Ordenar: memory → menor score primero (menos movs = mejor), resto → mayor score primero
+    // Ordenar
     if(game==='memory'){
       entries.sort((a,b)=>{
-        if(a.score>0&&b.score>0) return a.score-b.score;
-        if(a.score>0) return -1;
-        if(b.score>0) return 1;
+        if(a.score>0&&b.score>0)return a.score-b.score;
+        if(a.score>0)return -1;
+        if(b.score>0)return 1;
         return 0;
       });
     }else{
@@ -704,54 +797,41 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 
     const ranked=entries.filter(e=>e.score>0);
     const unranked=entries.filter(e=>!e.score||e.score===0);
-    const allEntries=[...ranked,...unranked];
+    const all=[...ranked,...unranked];
 
-    // Columnas extra según el juego
-    let extraHeaders='',extraCols;
+    let extraH='',extraC;
     if(game==='num'){
-      extraHeaders='<th style="text-align:center">INTENTOS</th><th style="text-align:center">USADOS</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.intentosRestantes!==undefined?e.intentosRestantes:e.score):'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.intentosUsados!==undefined?e.intentosUsados:'—'):'—'}</td>`;
+      extraH='<th style="text-align:center">INTENTOS</th><th style="text-align:center">USADOS</th>';
+      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.intentosRestantes??e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.intentosUsados??'—'):'—'}</td>`;
     }else if(game==='memory'){
-      extraHeaders='<th style="text-align:center">MOVIM.</th><th style="text-align:center">FALLOS</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.movimientos!==undefined?e.movimientos:e.score):'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.fallos!==undefined?e.fallos:'—'):'—'}</td>`;
+      extraH='<th style="text-align:center">MOVIM.</th><th style="text-align:center">FALLOS</th>';
+      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.movimientos??e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.fallos??'—'):'—'}</td>`;
     }else{
-      extraHeaders='<th style="text-align:center">COMPLETAD.</th><th style="text-align:center">ERRORES</th>';
-      extraCols=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.completados!==undefined?e.completados:e.score):'—'}</td>`
-        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.errores!==undefined?e.errores:'—'):'—'}</td>`;
+      extraH='<th style="text-align:center">COMPLETAD.</th><th style="text-align:center">ERRORES</th>';
+      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.completados??e.score):'—'}</td>`
+        +`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-pink)">${e.score>0?(e.errores??'—'):'—'}</td>`;
     }
 
-    let html='<table class="lb-table"><thead><tr>'
-      +'<th>#</th><th>JUGADOR</th>'+extraHeaders
-      +'</tr></thead><tbody>';
-
-    allEntries.slice(0,15).forEach((entry,i)=>{
-      const inRanked=i<ranked.length;
-      const rankClass=inRanked?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
-      const rankLabel=inRanked?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
-      const isMe=session&&entry.username.toLowerCase()===session.toLowerCase();
-      const isSeed=SEED_USERS.has(entry.username.toLowerCase());
-      html+='<tr class="'+(isMe?'lb-me':'')+'">'
-        +'<td class="lb-rank '+rankClass+'">'+rankLabel+'</td>'
-        +'<td class="lb-name">'+entry.username.toUpperCase()
-        +(isMe?' ◀':'')
-        +(entry.score===0?' <span class="lb-played-badge">SIN SCORE</span>':'')
-        +(isSeed&&entry.score>0?' <span class="lb-seed-badge">BOT</span>':'')
-        +'</td>'
-        +extraCols(entry)
-        +'</tr>';
+    let html='<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th>'+extraH+'</tr></thead><tbody>';
+    all.slice(0,20).forEach((entry,i)=>{
+      const inR=i<ranked.length;
+      const rClass=inR?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
+      const rLabel=inR?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
+      const isMe=session&&entry.username&&entry.username.toLowerCase()===session.toLowerCase();
+      html+=`<tr class="${isMe?'lb-me':''}">`
+        +`<td class="lb-rank ${rClass}">${rLabel}</td>`
+        +`<td class="lb-name">${(entry.username||'?').toUpperCase()}${isMe?' ◀':''}${entry.score===0?' <span class="lb-played-badge">SIN SCORE</span>':''}</td>`
+        +extraC(entry)
+        +`</tr>`;
     });
-
     html+='</tbody></table>';
-    if(allEntries.length>15){
-      html+='<div style="text-align:center;font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);margin-top:0.8rem;letter-spacing:1px;">+ '+(allEntries.length-15)+' JUGADORES MÁS</div>';
-    }
+    if(all.length>20) html+=`<div style="text-align:center;font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);margin-top:0.8rem;letter-spacing:1px;">+ ${all.length-20} JUGADORES MÁS</div>`;
     content.innerHTML=html;
   }
 
   let lbCurrentTab='num';
-
   function lbSwitchTab(game){
     lbCurrentTab=game;
     document.querySelectorAll('.lb-tab').forEach(t=>t.classList.toggle('active',t.dataset.game===game));
@@ -764,37 +844,27 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     lbRender(lbCurrentTab);
   }
 
-  // Limpia bots viejos y garantiza solo Kbros al cargar la página
-  (function lbBootClean(){
-    const oldBots=['neonghost','starlord99','cyberkid','astropunk','voidwalker'];
-    for(let i=localStorage.length-1;i>=0;i--){
-      const k=localStorage.key(i);
-      if(!k||!k.startsWith('lb_')) continue;
-      const parts=k.split('_');
-      if(parts.length>=4){
-        const user=parts.slice(3).join('_');
-        if(oldBots.includes(user)) localStorage.removeItem(k);
-      }
-    }
-    ['num','memory','puzzle'].forEach(g=>lbEnsureSeed(g));
-  })();
-
   document.getElementById('btn-leaderboard').addEventListener('click',openLeaderboard);
   document.getElementById('modal-lb-close').addEventListener('click',()=>document.getElementById('modal-leaderboard').classList.remove('open'));
   document.getElementById('modal-leaderboard').addEventListener('click',e=>{if(e.target===document.getElementById('modal-leaderboard'))document.getElementById('modal-leaderboard').classList.remove('open');});
   document.getElementById('lb-refresh-btn').addEventListener('click',()=>lbRender(lbCurrentTab));
 
+  // ── Firebase Setup Modal ──
+  document.getElementById('btn-setup').addEventListener('click',()=>document.getElementById('modal-setup').classList.add('open'));
+  document.getElementById('modal-setup-close').addEventListener('click',()=>document.getElementById('modal-setup').classList.remove('open'));
+  document.getElementById('modal-setup').addEventListener('click',e=>{if(e.target===document.getElementById('modal-setup'))document.getElementById('modal-setup').classList.remove('open');});
+
   // ── ADIVINA EL NUMERO ──
   let secretNum,attemptsLeft,minRange,maxRange,gameOver;
   function startGame(){secretNum=Math.floor(Math.random()*100)+1;attemptsLeft=5;minRange=1;maxRange=100;gameOver=false;document.getElementById('hint-display').textContent='?';document.getElementById('hint-text').textContent='Piensa un numero entre 1 y 100';document.getElementById('range-hint').textContent='RANGO: 1 - 100';document.getElementById('history').innerHTML='';document.getElementById('result-msg').textContent='';document.getElementById('result-msg').className='result-msg';document.getElementById('guess-input').value='';document.getElementById('guess-input').disabled=false;document.getElementById('guess-btn').disabled=false;document.getElementById('restart-btn').classList.remove('show');for(let i=1;i<=5;i++){const p=document.getElementById('pip-'+i);p.classList.remove('used','wrong');}}
-  function doGuess(){if(gameOver)return;const input=document.getElementById('guess-input');const val=parseInt(input.value);if(isNaN(val)||val<1||val>100){input.classList.add('shake');setTimeout(()=>input.classList.remove('shake'),300);return;}const pipIndex=6-attemptsLeft;const pip=document.getElementById('pip-'+pipIndex);if(val===secretNum){pip.classList.add('used');document.getElementById('hint-display').textContent=val;document.getElementById('hint-text').textContent='';document.getElementById('result-msg').textContent='CORRECTO!';document.getElementById('result-msg').className='result-msg win';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;const user=getSession();if(user)lbAddScore('num',user,{score:attemptsLeft,intentosRestantes:attemptsLeft,intentosUsados:(5-attemptsLeft)});return;}attemptsLeft--;pip.classList.add('wrong');const chip=document.createElement('div');if(val>secretNum){maxRange=Math.min(maxRange,val-1);chip.className='history-chip chip-high';chip.innerHTML=val+' v';document.getElementById('hint-display').textContent='v';document.getElementById('hint-text').textContent='Demasiado alto, baja un poco';}else{minRange=Math.max(minRange,val+1);chip.className='history-chip chip-low';chip.innerHTML=val+' ^';document.getElementById('hint-display').textContent='^';document.getElementById('hint-text').textContent='Demasiado bajo, sube un poco';}document.getElementById('history').appendChild(chip);document.getElementById('range-hint').textContent='RANGO: '+minRange+' - '+maxRange;input.value='';if(attemptsLeft===0){document.getElementById('result-msg').textContent='ERA EL '+secretNum;document.getElementById('result-msg').className='result-msg lose';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;}}
+  function doGuess(){if(gameOver)return;const input=document.getElementById('guess-input');const val=parseInt(input.value);if(isNaN(val)||val<1||val>100){input.classList.add('shake');setTimeout(()=>input.classList.remove('shake'),300);return;}const pipIndex=6-attemptsLeft;const pip=document.getElementById('pip-'+pipIndex);if(val===secretNum){pip.classList.add('used');document.getElementById('hint-display').textContent=val;document.getElementById('hint-text').textContent='';document.getElementById('result-msg').textContent='CORRECTO!';document.getElementById('result-msg').className='result-msg win';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;const user=getSession();if(user) safeAddScore('num',user,{score:attemptsLeft,intentosRestantes:attemptsLeft,intentosUsados:(5-attemptsLeft)});return;}attemptsLeft--;pip.classList.add('wrong');const chip=document.createElement('div');if(val>secretNum){maxRange=Math.min(maxRange,val-1);chip.className='history-chip chip-high';chip.innerHTML=val+' v';document.getElementById('hint-display').textContent='v';document.getElementById('hint-text').textContent='Demasiado alto, baja un poco';}else{minRange=Math.max(minRange,val+1);chip.className='history-chip chip-low';chip.innerHTML=val+' ^';document.getElementById('hint-display').textContent='^';document.getElementById('hint-text').textContent='Demasiado bajo, sube un poco';}document.getElementById('history').appendChild(chip);document.getElementById('range-hint').textContent='RANGO: '+minRange+' - '+maxRange;input.value='';if(attemptsLeft===0){document.getElementById('result-msg').textContent='ERA EL '+secretNum;document.getElementById('result-msg').className='result-msg lose';document.getElementById('guess-input').disabled=true;document.getElementById('guess-btn').disabled=true;document.getElementById('restart-btn').classList.add('show');gameOver=true;}}
 
   document.getElementById('game-card-1').addEventListener('click',()=>{
     startGame();
     document.getElementById('modal').classList.add('open');
     setTimeout(()=>document.getElementById('guess-input').focus(),300);
     const user=getSession();
-    if(user) lbRegisterPlayer('num',user);
+    if(user) safeRegisterPlayer('num',user);
   });
   document.getElementById('modal-close').addEventListener('click',()=>document.getElementById('modal').classList.remove('open'));
   document.getElementById('modal').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.remove('open');});
@@ -816,16 +886,10 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   function mgInit(){clearInterval(mgTimerInterval);mgSeconds=0;mgMoves=0;mgFallos=0;mgMatched=[];mgFlipped=[];mgLock=false;mgStarted=false;const pool=mgShuffle([...MG_IMAGES]).slice(0,mgPairs);mgCards=mgShuffle([...pool,...pool].map((src,i)=>({id:i,src:src})));document.getElementById('mg-moves').textContent='0';document.getElementById('mg-timer').textContent='0:00';document.getElementById('mg-pairs-found').innerHTML='0/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-message').textContent='';document.getElementById('mg-message').className='mg-message';const grid=document.getElementById('mg-grid');const cols=mgCols(mgPairs);const sz=mgCardSize(mgPairs);grid.style.gridTemplateColumns='repeat('+cols+', '+sz+'px)';grid.innerHTML='';const pRow=document.getElementById('mg-pairs-row');pRow.innerHTML='';for(let i=0;i<mgPairs;i++){const dot=document.createElement('div');dot.className='mg-pair-dot';dot.id='mg-dot-'+i;pRow.appendChild(dot);}mgCards.forEach((card,idx)=>{const el=document.createElement('div');el.className='mg-card';el.style.width=sz+'px';el.style.height=sz+'px';el.dataset.idx=idx;const back=document.createElement('div');back.className='mg-face mg-back';const bIcon=document.createElement('div');bIcon.className='mg-back-icon';bIcon.textContent='?';const bDots=document.createElement('div');bDots.className='mg-back-dots';for(let d=0;d<3;d++){const dd=document.createElement('div');dd.className='mg-back-dot';bDots.appendChild(dd);}back.appendChild(bIcon);back.appendChild(bDots);const front=document.createElement('div');front.className='mg-face mg-front';const img=document.createElement('img');img.src=card.src;img.alt='carta';img.draggable=false;front.appendChild(img);el.appendChild(back);el.appendChild(front);el.addEventListener('click',()=>mgClick(el,idx));grid.appendChild(el);});}
   function mgStartTimer(){mgTimerInterval=setInterval(()=>{mgSeconds++;const m=Math.floor(mgSeconds/60),s=mgSeconds%60;document.getElementById('mg-timer').textContent=m+':'+String(s).padStart(2,'0');},1000);}
   function mgClick(el,idx){if(mgLock||mgMatched.includes(idx)||mgFlipped.includes(idx))return;if(!mgStarted){mgStarted=true;mgStartTimer();}el.classList.add('mg-flipped');mgFlipped.push(idx);if(mgFlipped.length===2){mgLock=true;mgMoves++;document.getElementById('mg-moves').textContent=mgMoves;mgCheckMatch();}}
-  function mgCheckMatch(){const[a,b]=mgFlipped;const allCards=document.querySelectorAll('#mg-grid .mg-card');if(mgCards[a].src===mgCards[b].src){mgMatched.push(a,b);const count=mgMatched.length/2;document.getElementById('mg-pairs-found').innerHTML=count+'/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-dot-'+(count-1)).classList.add('mg-dot-done');allCards[a].classList.add('mg-matched');allCards[b].classList.add('mg-matched');setTimeout(()=>{allCards[a].classList.add('mg-pop');allCards[b].classList.add('mg-pop');},50);setTimeout(()=>{allCards[a].classList.remove('mg-pop');allCards[b].classList.remove('mg-pop');},400);mgFlipped=[];mgLock=false;if(mgMatched.length===mgCards.length){clearInterval(mgTimerInterval);const m=Math.floor(mgSeconds/60),s=mgSeconds%60;setTimeout(()=>{const msg=document.getElementById('mg-message');msg.textContent='GANASTE! '+mgMoves+' mov - '+m+':'+String(s).padStart(2,'0');msg.className='mg-message mg-win';const user=getSession();if(user)lbAddScore('memory',user,{score:mgMoves,movimientos:mgMoves,fallos:mgFallos});},400);}}else{setTimeout(()=>{allCards[a].classList.add('mg-shake');allCards[b].classList.add('mg-shake');},100);setTimeout(()=>{allCards[a].classList.remove('mg-flipped','mg-shake');allCards[b].classList.remove('mg-flipped','mg-shake');mgFlipped=[];mgLock=false;mgFallos++;},900);}}
+  function mgCheckMatch(){const[a,b]=mgFlipped;const allCards=document.querySelectorAll('#mg-grid .mg-card');if(mgCards[a].src===mgCards[b].src){mgMatched.push(a,b);const count=mgMatched.length/2;document.getElementById('mg-pairs-found').innerHTML=count+'/<span id="mg-pairs-total">'+mgPairs+'</span>';document.getElementById('mg-dot-'+(count-1)).classList.add('mg-dot-done');allCards[a].classList.add('mg-matched');allCards[b].classList.add('mg-matched');setTimeout(()=>{allCards[a].classList.add('mg-pop');allCards[b].classList.add('mg-pop');},50);setTimeout(()=>{allCards[a].classList.remove('mg-pop');allCards[b].classList.remove('mg-pop');},400);mgFlipped=[];mgLock=false;if(mgMatched.length===mgCards.length){clearInterval(mgTimerInterval);const m=Math.floor(mgSeconds/60),s=mgSeconds%60;setTimeout(()=>{const msg=document.getElementById('mg-message');msg.textContent='GANASTE! '+mgMoves+' mov - '+m+':'+String(s).padStart(2,'0');msg.className='mg-message mg-win';const user=getSession();if(user) safeAddScore('memory',user,{score:mgMoves,movimientos:mgMoves,fallos:mgFallos});},400);}}else{setTimeout(()=>{allCards[a].classList.add('mg-shake');allCards[b].classList.add('mg-shake');},100);setTimeout(()=>{allCards[a].classList.remove('mg-flipped','mg-shake');allCards[b].classList.remove('mg-flipped','mg-shake');mgFlipped=[];mgLock=false;mgFallos++;},900);}}
   document.querySelectorAll('.mg-diff-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.mg-diff-btn').forEach(b=>b.classList.remove('mg-diff-active'));btn.classList.add('mg-diff-active');mgPairs=parseInt(btn.dataset.pairs);mgInit();});});
   document.getElementById('mg-restart-btn').addEventListener('click',mgInit);
-
-  document.getElementById('game-card-2').addEventListener('click',()=>{
-    mgInit();
-    document.getElementById('modal-memory').classList.add('open');
-    const user=getSession();
-    if(user) lbRegisterPlayer('memory',user);
-  });
+  document.getElementById('game-card-2').addEventListener('click',()=>{mgInit();document.getElementById('modal-memory').classList.add('open');const user=getSession();if(user) safeRegisterPlayer('memory',user);});
   document.getElementById('modal-memory-close').addEventListener('click',()=>{document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);});
   document.getElementById('modal-memory').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-memory')){document.getElementById('modal-memory').classList.remove('open');clearInterval(mgTimerInterval);}});
 
@@ -837,36 +901,24 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     let pieces=[],boardSlots=[],traySlots=[];
     let activeDrag=null;
     let imgPool=[],currentImgIdx=-1;
-
     function refillPool(){imgPool=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(imgPool[0]===currentImgIdx){imgPool.push(imgPool.shift());}}
     function pickNextImg(){if(!imgPool.length)refillPool();currentImgIdx=imgPool.shift();return currentImgIdx;}
-
     function buildErrBar(){const bar=document.getElementById('pz-err-bar');bar.innerHTML='';for(let i=0;i<MAX_ERRORS;i++){const p=document.createElement('div');p.className='pz-err-pip'+(i<errors?' lit':'');bar.appendChild(p);}}
-
     function buildGame(){if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}cancelActiveDrag();document.getElementById('pz-next-banner').classList.remove('show');errors=0;won=false;blocked=false;document.getElementById('pz-msg').textContent='';document.getElementById('pz-msg').className='pz-msg';buildErrBar();const imgIdx=pickNextImg();const img=IMAGES[imgIdx];document.getElementById('pz-cur-thumb').src=img;document.getElementById('pz-completed').textContent=completedCount;const total=GRID_N*GRID_N;pieces=[];for(let i=0;i<total;i++){const row=Math.floor(i/GRID_N),col=i%GRID_N;pieces.push({id:i,row,col,bgX:-(col*SZ),bgY:-(row*SZ),bgSize:(SZ*GRID_N)+'px',bg:img,placed:false,boardPos:null,trayPos:null});}const shuffled=[...Array(total).keys()].sort(()=>Math.random()-0.5);const area=document.getElementById('pz-game-area');area.innerHTML='';const boardWrap=document.createElement('div');const board=document.createElement('div');board.className='pz-board';board.style.gridTemplateColumns='repeat('+GRID_N+','+SZ+'px)';boardSlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.boardIdx=i;board.appendChild(cell);boardSlots.push(cell);}boardWrap.appendChild(board);area.appendChild(boardWrap);const tWrap=document.createElement('div');tWrap.className='pz-tray-wrap';const tLbl=document.createElement('div');tLbl.className='pz-tray-label';tLbl.textContent='PIEZAS';tWrap.appendChild(tLbl);const tray=document.createElement('div');tray.className='pz-tray';tray.style.gridTemplateColumns='repeat(4,'+SZ+'px)';traySlots=[];for(let i=0;i<total;i++){const cell=document.createElement('div');cell.className='pz-tray-cell';cell.style.width=SZ+'px';cell.style.height=SZ+'px';cell.dataset.trayIdx=i;tray.appendChild(cell);traySlots.push(cell);}tWrap.appendChild(tray);area.appendChild(tWrap);shuffled.forEach((pieceId,trayPos)=>{pieces[pieceId].trayPos=trayPos;renderPieceInTray(pieceId,trayPos);});}
-
     function makePieceEl(pId){const p=pieces[pId];const el=document.createElement('div');el.className='pz-piece';el.style.backgroundImage='url(\''+p.bg+'\')';el.style.backgroundSize=p.bgSize;el.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';el.dataset.pieceId=pId;if(!p.placed)setupDrag(el,pId);return el;}
     function renderPieceInTray(pId,trayPos){const cell=traySlots[trayPos];cell.innerHTML='';cell.appendChild(makePieceEl(pId));}
     function renderPieceOnBoard(pId,boardPos){const cell=boardSlots[boardPos];cell.innerHTML='';const el=makePieceEl(pId);if(pieces[pId].placed)el.classList.add('pz-piece-locked');cell.appendChild(el);}
-
     function cancelActiveDrag(){if(!activeDrag)return;const{sourceEl,ghost,mh,uh,tmh,teh}=activeDrag;document.removeEventListener('mousemove',mh);document.removeEventListener('mouseup',uh);document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',teh);if(ghost&&ghost.parentNode)ghost.remove();if(sourceEl)sourceEl.classList.remove('pz-dragging');activeDrag=null;}
-
     function setupDrag(el,pId){el.addEventListener('mousedown',e=>{if(pieces[pId].placed||won||blocked)return;e.preventDefault();startDrag(e.clientX,e.clientY,pId,el);});el.addEventListener('touchstart',e=>{if(pieces[pId].placed||won||blocked)return;e.preventDefault();const t=e.touches[0];startDrag(t.clientX,t.clientY,pId,el);},{passive:false});}
-
     function startDrag(cx,cy,pId,el){cancelActiveDrag();const p=pieces[pId];el.classList.add('pz-dragging');const ghost=document.createElement('div');ghost.className='pz-ghost-drag';ghost.style.width=SZ+'px';ghost.style.height=SZ+'px';ghost.style.backgroundImage='url(\''+p.bg+'\')';ghost.style.backgroundSize=p.bgSize;ghost.style.backgroundPosition=p.bgX+'px '+p.bgY+'px';ghost.style.transform='translate(-50%,-50%)';ghost.style.left=cx+'px';ghost.style.top=cy+'px';document.body.appendChild(ghost);function onMove(ex,ey){ghost.style.left=ex+'px';ghost.style.top=ey+'px';}function onEnd(ex,ey){cancelActiveDrag();const drop=document.elementFromPoint(ex,ey);handleDropOn(drop,pId);}const mh=e=>onMove(e.clientX,e.clientY);const uh=e=>onEnd(e.clientX,e.clientY);const tmh=e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);};const teh=e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);};document.addEventListener('mousemove',mh);document.addEventListener('mouseup',uh);document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',teh,{passive:false});activeDrag={pId,sourceEl:el,ghost,mh,uh,tmh,teh};}
-
     function handleDropOn(drop,pId){if(!drop)return;const boardCell=drop.closest('[data-board-idx]');const trayCell=drop.closest('[data-tray-idx]');if(boardCell)tryPlaceOnBoard(pId,parseInt(boardCell.dataset.boardIdx));else if(trayCell)returnToTray(pId,parseInt(trayCell.dataset.trayIdx));else returnPieceToOrigin(pId);}
     function returnPieceToOrigin(pId){const p=pieces[pId];if(p.trayPos!=null)renderPieceInTray(pId,p.trayPos);else if(p.boardPos!=null)renderPieceOnBoard(pId,p.boardPos);}
-
     function tryPlaceOnBoard(pId,bIdx){const p=pieces[pId];if(won||p.placed||blocked)return;const occupantEl=boardSlots[bIdx].querySelector('.pz-piece');if(occupantEl){const occId=parseInt(occupantEl.dataset.pieceId);if(pieces[occId].placed){returnPieceToOrigin(pId);return;}const freeTray=findFreeTraySlot(pId);returnToTray(occId,freeTray);}if(bIdx===p.id){if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';p.trayPos=null;}if(p.boardPos!=null){boardSlots[p.boardPos].innerHTML='';p.boardPos=null;}p.placed=true;p.boardPos=bIdx;renderPieceOnBoard(pId,bIdx);boardSlots[bIdx].classList.add('pz-correct-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-correct-flash'),600);checkWin();}else{if(errors>=MAX_ERRORS){returnPieceToOrigin(pId);return;}errors++;buildErrBar();boardSlots[bIdx].classList.add('pz-error-flash');setTimeout(()=>boardSlots[bIdx].classList.remove('pz-error-flash'),600);returnPieceToOrigin(pId);if(errors>=MAX_ERRORS){blocked=true;document.getElementById('pz-msg').textContent='DEMASIADOS ERRORES — presiona NUEVO JUEGO';}}}
-
     function returnToTray(pId,preferredSlot){const p=pieces[pId];if(p.trayPos!=null){traySlots[p.trayPos].innerHTML='';}if(p.boardPos!=null){boardSlots[p.boardPos].innerHTML='';}p.boardPos=null;p.placed=false;let slot=preferredSlot!=null?preferredSlot:findFreeTraySlot();if(traySlots[slot]&&traySlots[slot].querySelector('.pz-piece')){slot=findFreeTraySlot();}p.trayPos=slot;renderPieceInTray(pId,slot);}
     function findFreeTraySlot(excludePId){for(let i=0;i<traySlots.length;i++){if(!traySlots[i].querySelector('.pz-piece'))return i;}if(excludePId!=null){const ep=pieces[excludePId];if(ep.trayPos!=null)return ep.trayPos;}return 0;}
-
-    function checkWin(){if(!pieces.every(p=>p.placed))return;won=true;completedCount++;document.getElementById('pz-completed').textContent=completedCount;const user=getSession();if(user)lbAddScore('puzzle',user,{score:completedCount,completados:completedCount,errores:errors});const tempPool=[...imgPool];if(!tempPool.length){const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];const banner=document.getElementById('pz-next-banner');const countEl=document.getElementById('pz-next-countdown');let count=3;countEl.textContent=count;banner.classList.add('show');window._pzCountdown=setInterval(()=>{count--;if(count<=0){clearInterval(window._pzCountdown);window._pzCountdown=null;banner.classList.remove('show');buildGame();}else{countEl.textContent=count;}},1000);}
-
+    function checkWin(){if(!pieces.every(p=>p.placed))return;won=true;completedCount++;document.getElementById('pz-completed').textContent=completedCount;const user=getSession();if(user) safeAddScore('puzzle',user,{score:completedCount,completados:completedCount,errores:errors});const tempPool=[...imgPool];if(!tempPool.length){const arr=[...Array(IMAGES.length).keys()].sort(()=>Math.random()-0.5);if(arr[0]===currentImgIdx)arr.push(arr.shift());tempPool.push(...arr);}const nextIdx=tempPool[0]!==undefined?tempPool[0]:((currentImgIdx+1)%IMAGES.length);document.getElementById('pz-next-img-preview').src=IMAGES[nextIdx];const banner=document.getElementById('pz-next-banner');const countEl=document.getElementById('pz-next-countdown');let count=3;countEl.textContent=count;banner.classList.add('show');window._pzCountdown=setInterval(()=>{count--;if(count<=0){clearInterval(window._pzCountdown);window._pzCountdown=null;banner.classList.remove('show');buildGame();}else{countEl.textContent=count;}},1000);}
     document.getElementById('pz-restart-btn').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();});
-    document.getElementById('game-card-3').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();document.getElementById('modal-puzzle').classList.add('open');const user=getSession();if(user)lbRegisterPlayer('puzzle',user);});
+    document.getElementById('game-card-3').addEventListener('click',()=>{completedCount=0;imgPool=[];currentImgIdx=-1;buildGame();document.getElementById('modal-puzzle').classList.add('open');const user=getSession();if(user) safeRegisterPlayer('puzzle',user);});
     function closePuzzle(){document.getElementById('modal-puzzle').classList.remove('open');cancelActiveDrag();if(window._pzCountdown){clearInterval(window._pzCountdown);window._pzCountdown=null;}document.getElementById('pz-next-banner').classList.remove('show');}
     document.getElementById('modal-puzzle-close').addEventListener('click',closePuzzle);
     document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
