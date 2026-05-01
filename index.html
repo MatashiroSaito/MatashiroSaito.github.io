@@ -225,7 +225,10 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-restart-btn:hover{background:rgba(0,245,255,0.1);}
 .pz-ghost-drag{position:fixed;pointer-events:none;z-index:9999;border-radius:6px;opacity:0.85;transform:translate(-50%,-50%);background-size:cover;}
 
-/* WORDLE */
+/* ══════════════════════════════════════════════
+   WORDLE — FIX: color explícito en todas las
+   variantes de celda para evitar texto invisible
+   ══════════════════════════════════════════════ */
 .modal-wordle-inner{width:520px;max-width:96vw;}
 .wl-daily-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.2rem;}
 .wl-daily-pill{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--neon-green);border:1px solid rgba(0,255,136,0.3);background:rgba(0,255,136,0.06);border-radius:20px;padding:4px 14px;}
@@ -235,11 +238,38 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-ai-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-purple);animation:pulse 1.5s infinite;}
 .wl-grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;margin:0 auto 1.2rem;width:fit-content;}
 .wl-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.wl-cell{width:52px;height:52px;border-radius:8px;background:var(--wl-empty);border:2px solid var(--wl-border);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;color:var(--text-main);transition:border-color 0.15s;position:relative;transform-style:preserve-3d;}
-.wl-cell.filled{border-color:rgba(0,245,255,0.5);}
-.wl-cell.correct{background:var(--wl-correct);border-color:var(--wl-correct);color:#fff;text-shadow:0 0 8px rgba(0,200,83,0.6);box-shadow:0 0 14px rgba(0,200,83,0.4);}
-.wl-cell.present{background:var(--wl-present);border-color:var(--wl-present);color:#fff;text-shadow:0 0 8px rgba(255,152,0,0.6);box-shadow:0 0 14px rgba(255,152,0,0.4);}
-.wl-cell.absent{background:var(--wl-absent);border-color:rgba(0,245,255,0.08);color:var(--text-muted);}
+
+/* FIX PRINCIPAL: color siempre explícito, sin depender de herencia */
+.wl-cell{
+  width:52px;height:52px;border-radius:8px;
+  background:var(--wl-empty);
+  border:2px solid var(--wl-border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;
+  color:#e8f0ff;           /* color fijo, nunca invisible */
+  transition:border-color 0.15s;
+  position:relative;
+  transform-style:preserve-3d;
+  /* Sin transform residual */
+}
+.wl-cell.filled{
+  border-color:rgba(0,245,255,0.5);
+  color:#e8f0ff !important; /* forzar visibilidad al escribir */
+}
+.wl-cell.correct{
+  background:var(--wl-correct);border-color:var(--wl-correct);
+  color:#fff !important;
+  text-shadow:0 0 8px rgba(0,200,83,0.6);box-shadow:0 0 14px rgba(0,200,83,0.4);
+}
+.wl-cell.present{
+  background:var(--wl-present);border-color:var(--wl-present);
+  color:#fff !important;
+  text-shadow:0 0 8px rgba(255,152,0,0.6);box-shadow:0 0 14px rgba(255,152,0,0.4);
+}
+.wl-cell.absent{
+  background:var(--wl-absent);border-color:rgba(0,245,255,0.08);
+  color:#7a8ab0 !important; /* text-muted fijo */
+}
 .wl-cell.validating{border-color:var(--neon-purple);animation:wl-validating 0.8s ease infinite;}
 @keyframes wl-validating{0%,100%{box-shadow:0 0 4px rgba(191,0,255,0.3);}50%{box-shadow:0 0 16px rgba(191,0,255,0.8);}}
 @keyframes wl-flip{0%{transform:rotateX(0);}50%{transform:rotateX(-90deg);}100%{transform:rotateX(0);}}
@@ -723,7 +753,6 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ══════════════════════════════════════════════════════════════════
   (function(){
 
-    // ── Palabra del día: pool grande de palabras españolas de 5 letras ──
     const WORD_POOL = [
       'abajo','abeja','abrir','abuso','acaso','acero','acido','acoso','actor','agudo',
       'aguja','ahora','aires','ajeno','alado','alamo','album','aleta','alfil','algas',
@@ -787,49 +816,11 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       'unico','union','urano','urdir','uvero','vacuo','vagas','vapor','varon','veloz',
       'venda','venta','veran','veras','verbo','verga','verso','vicio','video','vigor',
       'viril','virtu','vista','vocal','vodka','volar','volco','votar','vuelo','vulgo',
-      'yacer','yarda','yerno','yogur','zafio','zanca','zarpa','zurdo','abuso','acero',
-      'adios','afano','agave','agite','ajena','aloja','amiga','ancla','ancho','angon',
-      'ansia','apaga','apoya','arcen','arder','ardor','arelo','arfar','arida','ariel',
-      'aromo','arpon','arras','asado','asear','asela','asilo','asola','astil','atado',
-      'atajo','atrio','atroz','augur','aullar','avaro','avena','avida','aviso','ayuno',
-      'azadon','azahar','azote','azucar','badajo','bagaje','bajel','balar','balcon','balsa',
-      'banal','banco','banda','bardo','baron','barro','basar','batir','beber','belga',
-      'bella','bezar','bicho','bingo','birlo','bison','bledo','boato','bobia','bocal',
-      'bogar','bogot','bolar','bolso','bonal','bonzo','bordo','borgo','boron','borra',
-      'bosco','bover','bozal','brama','brazo','brega','breve','brial','brial','briga',
-      'bruta','buido','bujar','bulbo','bulle','buque','burgo','burin','buzon','cabal',
-      'cabra','cacto','cadmo','cajon','calan','calco','caldo','caliz','calma','calvo',
-      'campo','caney','canon','canto','canya','caoba','carga','caria','carpa','carpe',
-      'causa','cavar','cebar','ceder','cegar','celda','cembo','cesar','checa','chile',
-      'chino','choza','cieno','cifra','cigua','cilio','cinco','circo','cisco','cisma',
-      'citar','claro','clase','clavo','clero','cobre','cocer','coevo','cofia','coger',
-      'colar','colmo','color','colza','comer','comun','conde','copal','cormo','corpo',
-      'corso','corto','crasa','credo','crema','crica','crino','criar','crino','cromo',
-      'cruce','cruel','cuajo','cuero','cueva','culpa','culto','cumba','cunar','curar',
-      'curva','cuzco','daina','damar','datar','debil','decir','delta','denso','derby',
-      'dieta','digno','disco','diton','doblo','dolmo','dolor','donde','dopar','dorar',
-      'drama','drupa','ducha','dulce','dunas','duque','duras','ebano','echar','edema',
-      'ejote','enero','enojo','entre','envio','erizo','error','espia','etapa','etnia',
-      'evita','exito','extra','fabro','facil','faldo','fango','farsa','fauno','favor',
-      'fecal','felpa','feria','ferro','fibra','fideo','fiero','firma','flaca','flama',
-      'flato','fleco','flema','flora','flujo','fobia','fogon','folio','fondo','forja',
-      'forma','forro','fosco','frena','fresa','frito','fruto','fuego','fuera','funda',
-      'gaban','gafas','galan','gamba','garra','garza','gatos','genio','gesta','giron',
-      'glosa','golpe','gorra','gotas','gozan','graba','grado','grama','graso','gripe',
-      'gruta','guapo','guasa','gubia','guion','guiso','gusto','habla','hacer','hacha',
-      'hampa','harto','hasta','hecho','helio','heroe','hielo','hogar','honda','honor',
-      'horca','horma','hosco','hotel','hueco','hueso','huevo','huida','humor','huron',
-      'icono','ideal','igual','impar','incas','indio','largo','labia','labio','lanar',
-      'lanza','lapiz','larga','laton','lauca','laudo','lavar','lazos','lecho','legar',
-      'lento','lerdo','levar','libre','lidia','limon','linea','lista','llano','llega'
+      'yacer','yarda','yerno','yogur','zafio','zanca','zarpa','zurdo'
     ];
 
-    // Filtrar solo palabras de exactamente 5 letras únicas
     const DICT = [...new Set(WORD_POOL.filter(w => w.length === 5))];
-
-    // Caché de validación IA para no repetir consultas
     const aiValidationCache = {};
-
     const ROWS=6, COLS=5;
     const KB_ROWS=[
       ['q','w','e','r','t','y','u','i','o','p'],
@@ -870,21 +861,13 @@ main{flex:1;padding:2rem;overflow-y:auto;}
       return n.getDate()+' '+meses[n.getMonth()]+' '+n.getFullYear();
     }
 
-    // ── VALIDACIÓN CON IA ──
     async function validateWordWithAI(word) {
-      // La palabra target siempre es válida
       if (word === wlTarget) return true;
-
-      // Verificar caché
       if (aiValidationCache[word] !== undefined) return aiValidationCache[word];
-
-      // Verificar en lista local primero (respuesta instantánea)
       if (DICT.includes(word)) {
         aiValidationCache[word] = true;
         return true;
       }
-
-      // Consultar Claude API
       try {
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -903,15 +886,13 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
             }]
           })
         });
-
         const data = await response.json();
         const answer = data.content?.[0]?.text?.trim().toUpperCase() || 'NO';
         const isValid = answer.startsWith('SI');
         aiValidationCache[word] = isValid;
         return isValid;
       } catch(err) {
-        console.warn('Error validando con IA, usando lista local:', err);
-        // Fallback: aceptar si tiene al menos 5 letras válidas en español
+        console.warn('Error validando con IA:', err);
         const isValid = /^[a-záéíóúüñ]{5}$/.test(word);
         aiValidationCache[word] = isValid;
         return isValid;
@@ -993,14 +974,21 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
       }
     }
 
+    // ══════════════════════════════════════════════
+    // FIX PRINCIPAL: wlRenderCurrent siempre itera
+    // las 5 celdas y limpia las vacías correctamente
+    // ══════════════════════════════════════════════
     function wlRenderCurrent(){
       const row=wlGuesses.length;
       for(let c=0;c<COLS;c++){
         const cell=document.getElementById('wl-cell-'+row+'-'+c);
-        if(!cell)return;
+        if(!cell) continue; // continue, no return
         const letter=wlCurrent[c]||'';
         cell.textContent=letter.toUpperCase();
+        // Resetear clases — solo filled si hay letra, vacío si no
         cell.className='wl-cell'+(letter?' filled':'');
+        // Forzar color visible via style para evitar cualquier herencia CSS problemática
+        cell.style.color='';
       }
     }
 
@@ -1008,11 +996,9 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
       if(wlCurrent.length<COLS){wlToast('FALTAN LETRAS');wlShakeRow(wlGuesses.length);return;}
       if(wlOver||wlAnimating||wlValidating)return;
 
-      // Activar estado de validación
       wlValidating=true;
       setKeyboardDisabled(true);
 
-      // Mostrar efecto visual de validación en las celdas
       const rowIdx=wlGuesses.length;
       for(let c=0;c<COLS;c++){
         const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
@@ -1020,10 +1006,8 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
       }
       wlToastValidating('CONSULTANDO IA...');
 
-      // Validar con IA
       const isValid = await validateWordWithAI(wlCurrent);
 
-      // Quitar efecto validación
       for(let c=0;c<COLS;c++){
         const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
         if(cell) cell.classList.remove('validating');
@@ -1038,7 +1022,6 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
         return;
       }
 
-      // Procesar intento válido
       const guess=wlCurrent;
       const result=wlEvaluate(guess,wlTarget);
       wlGuesses.push(guess);
@@ -1052,6 +1035,7 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
           setTimeout(()=>{
             cell.textContent=r.letter.toUpperCase();
             cell.className='wl-cell '+r.status;
+            cell.style.color=''; // limpiar cualquier inline style
           },250);
         },c*100);
       });
@@ -1087,7 +1071,6 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
       },COLS*100+400);
     }
 
-    let _validatingToastTimeout=null;
     function wlToastValidating(msg){
       const t=document.getElementById('wl-toast');
       t.textContent=msg;
@@ -1161,6 +1144,7 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
           const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
           cell.textContent=r.letter.toUpperCase();
           cell.className='wl-cell '+r.status;
+          cell.style.color='';
         });
         wlUpdateKeyboard(result);
       });
@@ -1217,5 +1201,4 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
     });
   })();
   </script>
-</body>
-</html>
+</body></html>
