@@ -230,6 +230,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-daily-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.2rem;}
 .wl-daily-pill{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--neon-green);border:1px solid rgba(0,255,136,0.3);background:rgba(0,255,136,0.06);border-radius:20px;padding:4px 14px;}
 .wl-date-pill{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);border:1px solid var(--border-glow);border-radius:20px;padding:4px 14px;}
+.wl-ai-badge{display:flex;align-items:center;justify-content:center;margin-bottom:0.8rem;}
+.wl-ai-pill{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;color:var(--neon-purple);border:1px solid rgba(191,0,255,0.4);background:rgba(191,0,255,0.08);border-radius:20px;padding:4px 14px;display:flex;align-items:center;gap:6px;}
+.wl-ai-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-purple);animation:pulse 1.5s infinite;}
 .wl-grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;margin:0 auto 1.2rem;width:fit-content;}
 .wl-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .wl-cell{width:52px;height:52px;border-radius:8px;background:var(--wl-empty);border:2px solid var(--wl-border);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;color:var(--text-main);transition:border-color 0.15s;position:relative;transform-style:preserve-3d;}
@@ -237,6 +240,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-cell.correct{background:var(--wl-correct);border-color:var(--wl-correct);color:#fff;text-shadow:0 0 8px rgba(0,200,83,0.6);box-shadow:0 0 14px rgba(0,200,83,0.4);}
 .wl-cell.present{background:var(--wl-present);border-color:var(--wl-present);color:#fff;text-shadow:0 0 8px rgba(255,152,0,0.6);box-shadow:0 0 14px rgba(255,152,0,0.4);}
 .wl-cell.absent{background:var(--wl-absent);border-color:rgba(0,245,255,0.08);color:var(--text-muted);}
+.wl-cell.validating{border-color:var(--neon-purple);animation:wl-validating 0.8s ease infinite;}
+@keyframes wl-validating{0%,100%{box-shadow:0 0 4px rgba(191,0,255,0.3);}50%{box-shadow:0 0 16px rgba(191,0,255,0.8);}}
 @keyframes wl-flip{0%{transform:rotateX(0);}50%{transform:rotateX(-90deg);}100%{transform:rotateX(0);}}
 .wl-cell.flip{animation:wl-flip 0.5s ease forwards;}
 @keyframes wl-pop{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
@@ -247,6 +252,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-cell.dance{animation:wl-dance 0.6s ease;}
 .wl-toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,245,255,0.12);border:1px solid var(--neon-cyan);color:var(--text-main);font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;padding:8px 20px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity 0.3s;white-space:nowrap;z-index:10;}
 .wl-toast.show{opacity:1;}
+.wl-toast.validating-toast{background:rgba(191,0,255,0.12);border-color:var(--neon-purple);color:var(--neon-purple);}
 .wl-result{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;text-align:center;letter-spacing:2px;min-height:26px;margin-bottom:0.8rem;}
 .wl-result.win{color:var(--neon-green);text-shadow:0 0 16px rgba(0,255,136,0.6);animation:pulse 1s infinite;}
 .wl-result.lose{color:var(--neon-pink);}
@@ -263,6 +269,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-key.correct{background:var(--wl-correct);border-color:var(--wl-correct);color:#fff;}
 .wl-key.present{background:var(--wl-present);border-color:var(--wl-present);color:#fff;}
 .wl-key.absent{background:var(--wl-absent);border-color:rgba(0,245,255,0.05);color:var(--text-muted);}
+.wl-key:disabled{opacity:0.5;cursor:not-allowed;}
 .wl-legend{display:flex;gap:18px;justify-content:center;margin-bottom:1rem;flex-wrap:wrap;}
 .wl-leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);}
 .wl-leg-dot{width:14px;height:14px;border-radius:4px;}
@@ -420,9 +427,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
         </div>
         <div class="act-divider"></div>
         <div class="act-card">
-          <div class="act-card-header"><span class="act-icon">&#129344;</span><div><div class="act-name">WORDLE EN ESPAÑOL</div><span class="act-tag">DIARIO</span></div></div>
-          <p class="act-desc">Adivina la <strong>palabra del día</strong> de 5 letras en 6 intentos. Verde = correcta, naranja = existe pero mal posición. <strong>Una nueva palabra cada día</strong> a medianoche.</p>
-          <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;</span><span class="act-status act-status-new">NUEVO</span></div>
+          <div class="act-card-header"><span class="act-icon">&#129344;</span><div><div class="act-name">WORDLE EN ESPAÑOL · IA</div><span class="act-tag">DIARIO</span></div></div>
+          <p class="act-desc">Adivina la <strong>palabra del día</strong> de 5 letras en 6 intentos. Verde = correcta, naranja = existe pero mal posición. <strong>Valida cualquier palabra del español</strong> con inteligencia artificial. Una nueva palabra cada día a medianoche.</p>
+          <div class="act-meta"><span class="act-diff">Dificultad: &#11088;&#11088;</span><span class="act-status act-status-new">ACTUALIZADO</span></div>
         </div>
       </div>
     </div>
@@ -551,6 +558,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
         <span class="wl-daily-pill">⬤ MODO DIARIO</span>
         <span class="wl-date-pill" id="wl-date-pill"></span>
       </div>
+      <div class="wl-ai-badge">
+        <span class="wl-ai-pill"><span class="wl-ai-dot"></span>VALIDACIÓN CON IA · CUALQUIER PALABRA EN ESPAÑOL</span>
+      </div>
       <div class="wl-legend">
         <div class="wl-leg-item"><div class="wl-leg-dot wl-leg-correct"></div>Correcta</div>
         <div class="wl-leg-item"><div class="wl-leg-dot wl-leg-present"></div>Existe · mal posición</div>
@@ -606,176 +616,29 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   // ── SIDEBAR ──
   document.querySelectorAll('.sidebar-item').forEach(item=>{item.addEventListener('click',function(){document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active');});});
 
-  // ══════════════════════════════════════════════════════════════════
-  // ── STORAGE COMPARTIDO (window.storage artifact API) ────────────
-  // ══════════════════════════════════════════════════════════════════
+  // ── STORAGE ──
   function monthKey(){const n=new Date();return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0');}
-
-  // Clave del leaderboard global: lb:game:YYYYMM:username
-  // Usamos shared=true para que todos los usuarios vean los mismos datos
-
-  async function storageSaveScore(game, username, data){
-    if(!username)return;
-    const mk=monthKey();
-    const key='lb:'+game+':'+mk+':'+username.toLowerCase();
-    // Leer el existente para comparar
-    let existing=null;
-    try{const r=await window.storage.get(key,true);if(r)existing=JSON.parse(r.value);}catch(e){}
-    if(existing){
-      if(game==='memory'&&data.score>0&&existing.score>0&&data.score>=existing.score)return;
-      if(game!=='memory'&&data.score<=existing.score)return;
-    }
-    try{await window.storage.set(key,JSON.stringify({...data,username,updatedAt:Date.now()}),true);}catch(e){console.warn('storage set error',e);}
-  }
-
-  async function storageRegisterPlayer(game, username){
-    if(!username)return;
-    const mk=monthKey();
-    const key='lb:'+game+':'+mk+':'+username.toLowerCase();
-    try{
-      await window.storage.get(key,true);
-      // ya existe, no hacer nada
-    }catch(e){
-      // no existe, crear con score 0
-      try{await window.storage.set(key,JSON.stringify({score:0,username,updatedAt:Date.now()}),true);}catch(e2){}
-    }
-  }
-
-  async function storageGetLeaderboard(game){
-    const mk=monthKey();
-    const prefix='lb:'+game+':'+mk+':';
-    try{
-      const list=await window.storage.list(prefix,true);
-      if(!list||!list.keys)return[];
-      const entries=[];
-      for(const k of list.keys){
-        try{const r=await window.storage.get(k,true);if(r)entries.push(JSON.parse(r.value));}catch(e){}
-      }
-      return entries;
-    }catch(e){return[];}
-  }
-
-  // Fallback local si window.storage no está disponible
+  async function storageSaveScore(game,username,data){if(!username)return;const mk=monthKey();const key='lb:'+game+':'+mk+':'+username.toLowerCase();let existing=null;try{const r=await window.storage.get(key,true);if(r)existing=JSON.parse(r.value);}catch(e){}if(existing){if(game==='memory'&&data.score>0&&existing.score>0&&data.score>=existing.score)return;if(game!=='memory'&&data.score<=existing.score)return;}try{await window.storage.set(key,JSON.stringify({...data,username,updatedAt:Date.now()}),true);}catch(e){console.warn('storage set error',e);}}
+  async function storageRegisterPlayer(game,username){if(!username)return;const mk=monthKey();const key='lb:'+game+':'+mk+':'+username.toLowerCase();try{await window.storage.get(key,true);}catch(e){try{await window.storage.set(key,JSON.stringify({score:0,username,updatedAt:Date.now()}),true);}catch(e2){}}}
+  async function storageGetLeaderboard(game){const mk=monthKey();const prefix='lb:'+game+':'+mk+':';try{const list=await window.storage.list(prefix,true);if(!list||!list.keys)return[];const entries=[];for(const k of list.keys){try{const r=await window.storage.get(k,true);if(r)entries.push(JSON.parse(r.value));}catch(e){}}return entries;}catch(e){return[];}}
   function hasStorage(){return typeof window.storage!=='undefined'&&window.storage!==null;}
+  async function safeAddScore(game,username,data){if(!username)return;if(hasStorage()){await storageSaveScore(game,username,data);}else{const key='lb_local_'+game+'_'+username.toLowerCase();const raw=localStorage.getItem(key);let old=raw?JSON.parse(raw).score:null;if(old===null||(game==='memory'?data.score<old:data.score>old))localStorage.setItem(key,JSON.stringify({...data,username}));}}
+  async function safeRegisterPlayer(game,username){if(!username)return;if(hasStorage()){await storageRegisterPlayer(game,username);}else{const key='lb_local_'+game+'_'+username.toLowerCase();if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({score:0,username}));}}
+  async function safeGetLeaderboard(game){if(hasStorage()){return await storageGetLeaderboard(game);}else{const prefix='lb_local_'+game+'_';const entries=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix)){try{entries.push(JSON.parse(localStorage.getItem(k)));}catch(e){}}}return entries;}}
 
-  async function safeAddScore(game,username,data){
-    if(!username)return;
-    if(hasStorage()){
-      await storageSaveScore(game,username,data);
-    } else {
-      const key='lb_local_'+game+'_'+username.toLowerCase();
-      const raw=localStorage.getItem(key);
-      let old=raw?JSON.parse(raw).score:null;
-      if(old===null||(game==='memory'?data.score<old:data.score>old))
-        localStorage.setItem(key,JSON.stringify({...data,username}));
-    }
-  }
-
-  async function safeRegisterPlayer(game,username){
-    if(!username)return;
-    if(hasStorage()){
-      await storageRegisterPlayer(game,username);
-    } else {
-      const key='lb_local_'+game+'_'+username.toLowerCase();
-      if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({score:0,username}));
-    }
-  }
-
-  async function safeGetLeaderboard(game){
-    if(hasStorage()){
-      return await storageGetLeaderboard(game);
-    } else {
-      const prefix='lb_local_'+game+'_';
-      const entries=[];
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i);
-        if(k&&k.startsWith(prefix)){try{entries.push(JSON.parse(localStorage.getItem(k)));}catch(e){}}
-      }
-      return entries;
-    }
-  }
-
-  // ── USUARIOS (cuentas locales en localStorage) ──
-  // Las cuentas se almacenan localmente; los SCORES son compartidos vía window.storage
-  const USERS_KEY='kbros_users_v2';
-  const SESSION_KEY='kbros_session_v2';
+  // ── AUTH ──
+  const USERS_KEY='kbros_users_v2';const SESSION_KEY='kbros_session_v2';
   function getUsers(){try{return JSON.parse(localStorage.getItem(USERS_KEY))||{};}catch(e){return{};}}
   function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
   function getSession(){return localStorage.getItem(SESSION_KEY)||null;}
   function saveSession(name){localStorage.setItem(SESSION_KEY,name);}
   function clearSession(){localStorage.removeItem(SESSION_KEY);}
-
-  function renderNav(){
-    const user=getSession();
-    const actions=document.getElementById('nav-actions');
-    if(user){
-      const initials=user.slice(0,2).toUpperCase();
-      actions.innerHTML=`<div class="nav-user"><div class="nav-user-avatar" title="${user}">${initials}</div><span class="nav-user-name">${user.toUpperCase()}</span><button class="nav-logout-btn" onclick="doLogout()">SALIR</button></div>`;
-    }else{
-      actions.innerHTML=`<button class="nav-btn nav-btn-primary" id="btn-entrar" onclick="openAuth()">ENTRAR</button>`;
-    }
-  }
-
+  function renderNav(){const user=getSession();const actions=document.getElementById('nav-actions');if(user){const initials=user.slice(0,2).toUpperCase();actions.innerHTML=`<div class="nav-user"><div class="nav-user-avatar" title="${user}">${initials}</div><span class="nav-user-name">${user.toUpperCase()}</span><button class="nav-logout-btn" onclick="doLogout()">SALIR</button></div>`;}else{actions.innerHTML=`<button class="nav-btn nav-btn-primary" id="btn-entrar" onclick="openAuth()">ENTRAR</button>`;}}
   function openAuth(){switchTab('login');document.getElementById('modal-auth').classList.add('open');}
   function doLogout(){clearSession();renderNav();}
-
-  function switchTab(tab){
-    const isLogin=tab==='login';
-    document.getElementById('tab-login').classList.toggle('active',isLogin);
-    document.getElementById('tab-register').classList.toggle('active',!isLogin);
-    document.getElementById('form-login').style.display=isLogin?'block':'none';
-    document.getElementById('form-register').style.display=isLogin?'none':'block';
-    document.getElementById('auth-title').textContent=isLogin?'ENTRAR':'REGISTRO';
-    document.getElementById('auth-subtitle').textContent=isLogin?'bienvenido de vuelta':'crea tu cuenta';
-    document.getElementById('login-msg').textContent='';
-    document.getElementById('reg-msg').textContent='';
-  }
-
-  function doLogin(){
-    const name=document.getElementById('login-name').value.trim();
-    const pass=document.getElementById('login-pass').value;
-    const msg=document.getElementById('login-msg');
-    if(!name||!pass){showMsg(msg,'COMPLETA TODOS LOS CAMPOS','error');return;}
-    const users=getUsers();
-    if(!users[name.toLowerCase()]){showMsg(msg,'USUARIO NO ENCONTRADO','error');return;}
-    if(users[name.toLowerCase()].password!==btoa(pass)){showMsg(msg,'CONTRASEÑA INCORRECTA','error');return;}
-    const displayName=users[name.toLowerCase()].name;
-    saveSession(displayName);
-    showMsg(msg,'BIENVENIDO '+displayName.toUpperCase()+'!','success');
-    setTimeout(()=>{
-      document.getElementById('modal-auth').classList.remove('open');
-      renderNav();
-      document.getElementById('login-name').value='';
-      document.getElementById('login-pass').value='';
-    },900);
-  }
-
-  function doRegister(){
-    const name=document.getElementById('reg-name').value.trim();
-    const pass=document.getElementById('reg-pass').value;
-    const pass2=document.getElementById('reg-pass2').value;
-    const msg=document.getElementById('reg-msg');
-    if(!name||!pass||!pass2){showMsg(msg,'COMPLETA TODOS LOS CAMPOS','error');return;}
-    if(name.length<3){showMsg(msg,'NOMBRE MUY CORTO (min 3)','error');return;}
-    if(name.length>20){showMsg(msg,'NOMBRE MUY LARGO (max 20)','error');return;}
-    if(pass.length<4){showMsg(msg,'CONTRASEÑA MUY CORTA (min 4)','error');return;}
-    if(pass!==pass2){showMsg(msg,'LAS CONTRASEÑAS NO COINCIDEN','error');return;}
-    const users=getUsers();
-    const key=name.toLowerCase();
-    if(users[key]){showMsg(msg,'ESE NOMBRE YA ESTA EN USO','error');return;}
-    users[key]={name:name,password:btoa(pass),createdAt:Date.now()};
-    saveUsers(users);
-    saveSession(name);
-    showMsg(msg,'CUENTA CREADA!','success');
-    setTimeout(()=>{
-      document.getElementById('modal-auth').classList.remove('open');
-      renderNav();
-      document.getElementById('reg-name').value='';
-      document.getElementById('reg-pass').value='';
-      document.getElementById('reg-pass2').value='';
-    },900);
-  }
-
+  function switchTab(tab){const isLogin=tab==='login';document.getElementById('tab-login').classList.toggle('active',isLogin);document.getElementById('tab-register').classList.toggle('active',!isLogin);document.getElementById('form-login').style.display=isLogin?'block':'none';document.getElementById('form-register').style.display=isLogin?'none':'block';document.getElementById('auth-title').textContent=isLogin?'ENTRAR':'REGISTRO';document.getElementById('auth-subtitle').textContent=isLogin?'bienvenido de vuelta':'crea tu cuenta';document.getElementById('login-msg').textContent='';document.getElementById('reg-msg').textContent='';}
+  function doLogin(){const name=document.getElementById('login-name').value.trim();const pass=document.getElementById('login-pass').value;const msg=document.getElementById('login-msg');if(!name||!pass){showMsg(msg,'COMPLETA TODOS LOS CAMPOS','error');return;}const users=getUsers();if(!users[name.toLowerCase()]){showMsg(msg,'USUARIO NO ENCONTRADO','error');return;}if(users[name.toLowerCase()].password!==btoa(pass)){showMsg(msg,'CONTRASEÑA INCORRECTA','error');return;}const displayName=users[name.toLowerCase()].name;saveSession(displayName);showMsg(msg,'BIENVENIDO '+displayName.toUpperCase()+'!','success');setTimeout(()=>{document.getElementById('modal-auth').classList.remove('open');renderNav();document.getElementById('login-name').value='';document.getElementById('login-pass').value='';},900);}
+  function doRegister(){const name=document.getElementById('reg-name').value.trim();const pass=document.getElementById('reg-pass').value;const pass2=document.getElementById('reg-pass2').value;const msg=document.getElementById('reg-msg');if(!name||!pass||!pass2){showMsg(msg,'COMPLETA TODOS LOS CAMPOS','error');return;}if(name.length<3){showMsg(msg,'NOMBRE MUY CORTO (min 3)','error');return;}if(name.length>20){showMsg(msg,'NOMBRE MUY LARGO (max 20)','error');return;}if(pass.length<4){showMsg(msg,'CONTRASEÑA MUY CORTA (min 4)','error');return;}if(pass!==pass2){showMsg(msg,'LAS CONTRASEÑAS NO COINCIDEN','error');return;}const users=getUsers();const key=name.toLowerCase();if(users[key]){showMsg(msg,'ESE NOMBRE YA ESTA EN USO','error');return;}users[key]={name:name,password:btoa(pass),createdAt:Date.now()};saveUsers(users);saveSession(name);showMsg(msg,'CUENTA CREADA!','success');setTimeout(()=>{document.getElementById('modal-auth').classList.remove('open');renderNav();document.getElementById('reg-name').value='';document.getElementById('reg-pass').value='';document.getElementById('reg-pass2').value='';},900);}
   function showMsg(el,text,type){el.textContent=text;el.className='auth-msg '+type;}
   ['login-name','login-pass'].forEach(id=>{document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});});
   ['reg-name','reg-pass','reg-pass2'].forEach(id=>{document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doRegister();});});
@@ -784,79 +647,13 @@ main{flex:1;padding:2rem;overflow-y:auto;}
   document.getElementById('nav-actions').addEventListener('click',e=>{if(e.target&&e.target.id==='btn-entrar')openAuth();});
   renderNav();
 
-  // ── LEADERBOARD RENDER ──
-  function getMonthLabel(){
-    const n=new Date();
-    const m=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    return m[n.getMonth()]+' '+n.getFullYear();
-  }
+  // ── LEADERBOARD ──
+  function getMonthLabel(){const n=new Date();const m=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return m[n.getMonth()]+' '+n.getFullYear();}
   function updateMonthBadge(){const el=document.getElementById('lb-month-badge');if(el)el.textContent='📅 '+getMonthLabel().toUpperCase();}
-
-  async function lbRender(game){
-    updateMonthBadge();
-    const content=document.getElementById('lb-content');
-    const session=getSession();
-
-    if(!session){
-      content.innerHTML=`<div class="lb-login-note" onclick="document.getElementById('modal-leaderboard').classList.remove('open');openAuth()">🔐 INICIA SESIÓN PARA VER EL LEADERBOARD GLOBAL<br><br>Tus puntuaciones serán visibles para todos los jugadores.<br><br><strong>→ CLICK AQUÍ PARA INGRESAR</strong></div>`;
-      return;
-    }
-
-    content.innerHTML='<div class="lb-loading">CARGANDO RANKING GLOBAL...</div>';
-    let entries=await safeGetLeaderboard(game);
-    if(!entries||!entries.length){
-      content.innerHTML='<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';
-      return;
-    }
-    if(game==='memory'){
-      entries.sort((a,b)=>{
-        if(a.score>0&&b.score>0)return a.score-b.score;
-        if(a.score>0)return -1;if(b.score>0)return 1;return 0;
-      });
-    }else{entries.sort((a,b)=>b.score-a.score);}
-    const ranked=entries.filter(e=>e.score>0);
-    const unranked=entries.filter(e=>!e.score||e.score===0);
-    const all=[...ranked,...unranked];
-
-    let extraH='',extraC;
-    if(game==='num'){
-      extraH='<th style="text-align:center">INTENTOS RESTANTES</th>';
-      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.intentosRestantes??e.score):'—'}</td>`;
-    }else if(game==='memory'){
-      extraH='<th style="text-align:center">MOVIMIENTOS</th>';
-      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.movimientos??e.score):'—'}</td>`;
-    }else if(game==='wordle'){
-      extraH='<th style="text-align:center">INTENTO</th><th style="text-align:center">RACHA</th>';
-      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.intentoGanador??e.score)+'º':'—'}</td><td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-gold)">${e.score>0?(e.racha??1):'—'}</td>`;
-    }else{
-      extraH='<th style="text-align:center">COMPLETADOS</th>';
-      extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.completados??e.score):'—'}</td>`;
-    }
-
-    let html='<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th>'+extraH+'</tr></thead><tbody>';
-    all.slice(0,20).forEach((entry,i)=>{
-      const inR=i<ranked.length;
-      const rClass=inR?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';
-      const rLabel=inR?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';
-      const isMe=session&&entry.username&&entry.username.toLowerCase()===session.toLowerCase();
-      html+=`<tr class="${isMe?'lb-me':''}"><td class="lb-rank ${rClass}">${rLabel}</td><td class="lb-name">${(entry.username||'?').toUpperCase()}${isMe?' ◀':''}</td>${extraC(entry)}</tr>`;
-    });
-    html+='</tbody></table>';
-    if(all.length>20)html+=`<div style="text-align:center;font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);margin-top:0.8rem">+ ${all.length-20} MÁS</div>`;
-    content.innerHTML=html;
-  }
-
+  async function lbRender(game){updateMonthBadge();const content=document.getElementById('lb-content');const session=getSession();if(!session){content.innerHTML=`<div class="lb-login-note" onclick="document.getElementById('modal-leaderboard').classList.remove('open');openAuth()">🔐 INICIA SESIÓN PARA VER EL LEADERBOARD GLOBAL<br><br>Tus puntuaciones serán visibles para todos los jugadores.<br><br><strong>→ CLICK AQUÍ PARA INGRESAR</strong></div>`;return;}content.innerHTML='<div class="lb-loading">CARGANDO RANKING GLOBAL...</div>';let entries=await safeGetLeaderboard(game);if(!entries||!entries.length){content.innerHTML='<div class="lb-empty">SIN REGISTROS ESTE MES<br><br>SE EL PRIMERO EN JUGAR</div>';return;}if(game==='memory'){entries.sort((a,b)=>{if(a.score>0&&b.score>0)return a.score-b.score;if(a.score>0)return -1;if(b.score>0)return 1;return 0;});}else{entries.sort((a,b)=>b.score-a.score);}const ranked=entries.filter(e=>e.score>0);const unranked=entries.filter(e=>!e.score||e.score===0);const all=[...ranked,...unranked];let extraH='',extraC;if(game==='num'){extraH='<th style="text-align:center">INTENTOS RESTANTES</th>';extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.intentosRestantes??e.score):'—'}</td>`;}else if(game==='memory'){extraH='<th style="text-align:center">MOVIMIENTOS</th>';extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.movimientos??e.score):'—'}</td>`;}else if(game==='wordle'){extraH='<th style="text-align:center">INTENTO</th><th style="text-align:center">RACHA</th>';extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-cyan)">${e.score>0?(e.intentoGanador??e.score)+'º':'—'}</td><td style="text-align:center;font-family:Orbitron,monospace;font-size:12px;color:var(--neon-gold)">${e.score>0?(e.racha??1):'—'}</td>`;}else{extraH='<th style="text-align:center">COMPLETADOS</th>';extraC=e=>`<td style="text-align:center;font-family:Orbitron,monospace;font-size:13px;color:var(--neon-cyan)">${e.score>0?(e.completados??e.score):'—'}</td>`;}let html='<table class="lb-table"><thead><tr><th>#</th><th>JUGADOR</th>'+extraH+'</tr></thead><tbody>';all.slice(0,20).forEach((entry,i)=>{const inR=i<ranked.length;const rClass=inR?(i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-rest'):'lb-rank-rest';const rLabel=inR?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):'—';const isMe=session&&entry.username&&entry.username.toLowerCase()===session.toLowerCase();html+=`<tr class="${isMe?'lb-me':''}"><td class="lb-rank ${rClass}">${rLabel}</td><td class="lb-name">${(entry.username||'?').toUpperCase()}${isMe?' ◀':''}</td>${extraC(entry)}</tr>`;});html+='</tbody></table>';if(all.length>20)html+=`<div style="text-align:center;font-family:Orbitron,monospace;font-size:9px;color:var(--text-muted);margin-top:0.8rem">+ ${all.length-20} MÁS</div>`;content.innerHTML=html;}
   let lbCurrentTab='num';
-  function lbSwitchTab(game){
-    lbCurrentTab=game;
-    document.querySelectorAll('.lb-tab').forEach(t=>t.classList.toggle('active',t.dataset.game===game));
-    lbRender(game);
-  }
-  function openLeaderboard(){
-    document.getElementById('modal-leaderboard').classList.add('open');
-    updateMonthBadge();
-    lbRender(lbCurrentTab);
-  }
+  function lbSwitchTab(game){lbCurrentTab=game;document.querySelectorAll('.lb-tab').forEach(t=>t.classList.toggle('active',t.dataset.game===game));lbRender(game);}
+  function openLeaderboard(){document.getElementById('modal-leaderboard').classList.add('open');updateMonthBadge();lbRender(lbCurrentTab);}
   document.getElementById('btn-leaderboard').addEventListener('click',openLeaderboard);
   document.getElementById('modal-lb-close').addEventListener('click',()=>document.getElementById('modal-leaderboard').classList.remove('open'));
   document.getElementById('modal-leaderboard').addEventListener('click',e=>{if(e.target===document.getElementById('modal-leaderboard'))document.getElementById('modal-leaderboard').classList.remove('open');});
@@ -921,40 +718,503 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
   })();
 
-  // ── WORDLE EN ESPAÑOL ──
+  // ══════════════════════════════════════════════════════════════════
+  // ── WORDLE EN ESPAÑOL · CON VALIDACIÓN IA ─────────────────────
+  // ══════════════════════════════════════════════════════════════════
   (function(){
-    const WORDS=['abajo','abeja','abrir','abuso','acaso','acero','acido','acoso','actor','agudo','aguja','ahora','aires','ajeno','alado','alamo','album','aleta','alfil','algas','alias','alijo','almas','alojo','altar','altos','alzan','amado','amago','ameba','ameno','amigo','amino','antes','anzol','aorta','apego','apoyo','arena','armas','arpon','arras','artes','asado','asear','asilo','asomo','astro','atajo','ataud','ateos','atlas','atole','atomo','audio','avena','avion','aviso','ayuda','azote','babor','bahia','balde','banco','banda','bando','barba','barca','barro','baton','bazar','bella','berro','besar','bilis','birra','blusa','bocio','bolsa','bomba','borde','bordo','borla','botin','bravo','brisa','broca','bruja','buche','bueno','buque','burla','busca','buzon','cabal','cable','cacao','cajon','calco','caldo','calmo','calor','cameo','campo','canal','canto','caoba','capon','capaz','cargo','carne','carpa','carta','casco','caspa','causa','cavar','cazar','cebra','cegar','celda','celos','censo','cerdo','cerro','cerco','cesta','chico','chivo','cisne','citar','claro','clavo','cocer','colmo','color','comba','comer','comun','coral','corro','corte','corvo','cosmo','costo','crema','criba','cruce','cruel','cuajo','cuero','cueva','culpa','culto','cuota','curar','curva','danza','dardo','datos','debil','decir','delta','dense','deseo','deuda','dieta','digno','disco','divan','dobla','dolor','donde','dorar','droga','dulce','dunas','duque','duras','ebano','echar','edema','ejote','enero','enojo','entre','envio','erizo','error','espia','estoy','etapa','etnia','evita','exito','extra','fabro','facil','fajin','falda','fango','farsa','fauno','favor','fecal','felpa','feria','ferro','fibra','fideo','fiero','firma','flaco','flama','flato','fleco','flema','flora','flujo','fobia','fogon','folio','fondo','forja','forma','forro','fosco','freno','fresa','frito','fruto','fuego','fuera','funda','gaban','gafas','galan','gamba','garra','garza','gatos','genio','gesta','giron','glosa','golpe','gorra','gotas','gozan','graba','grado','grama','graso','gripe','gruta','guapo','guasa','gubia','guion','guiso','gusto','habla','hacer','hacha','hampa','harto','hasta','hecho','helio','heroe','hielo','hogar','honda','honor','horca','horma','hosco','hotel','hueco','hueso','huevo','huida','humor','huron','icono','ideal','igual','impar','incas','indio','input','intro','itrio','jabon','jaleo','jamon','jarro','jemer','jerga','jiron','joule','juego','jueza','jugar','junco','junto','jurar','karma','koala','largo','labia','labio','lanar','lanza','lapiz','larga','laton','lauca','laudo','lavar','lazos','lecho','legar','lento','lerdo','levar','libre','lidia','limon','linea','lista','llano','llega','llena','lleva','lloro','lonja','loros','lucha','lugar','lunar','macho','madre','magia','magno','mando','manga','manso','manto','marca','mareo','marte','marzo','masas','maton','mayor','mecer','mejor','melon','menor','mente','mesio','metal','meter','micro','miedo','minas','miope','misil','mismo','mitad','mitin','modal','mojar','molde','monje','moral','morro','morsa','mosca','motor','moton','mucho','muela','multa','mundo','mural','nacar','nadie','nafta','narco','navio','nerdo','nicho','nivel','noble','norma','norte','novio','nuevo','numen','oasis','obeso','ocean','ocelo','odiar','oeste','ojera','ondas','opaco','opina','orden','orgia','orlar','ostia','otero','oveja','pablo','padre','palco','palmo','palto','pampa','panel','paneo','panza','papel','parco','pared','pasmo','pasto','patio','pausa','pecar','pedal','pegar','peine','pelot','penas','perla','perro','pesar','piano','picas','pilma','pinco','pinto','piojo','pipas','pisar','pisco','piton','pizza','plaga','plano','plata','plaza','plomo','pluma','poder','poema','poleo','polvo','pompa','poner','porco','posma','potro','pozal','presa','primo','prosa','prueb','puedo','pujar','pulga','pulpo','punta','purga','queja','quien','quina','radar','rajar','rampa','rasgo','raton','rayar','razon','recto','redon','regla','reina','reloj','renco','renta','resol','retro','riada','rifle','rigor','rioja','ripio','rival','robot','robre','rocio','rodeo','rojez','rollo','rombo','ronco','ronin','roque','rosal','rosco','rozar','rubor','ruido','ruina','rumba','rumbo','sabia','sacro','salir','salmo','salon','salsa','salto','salud','salvo','samba','sanos','savia','secar','selon','selva','señal','sepia','seria','servo','sismo','sitio','sobre','sofar','solar','soler','sonar','soplo','sorbo','sordo','sorna','suave','sudor','sueco','suelo','suite','sulco','surco','tabla','tacos','tanto','tapiz','tarso','tasas','tauro','tejon','tenor','termo','tifus','tigre','timba','tiple','tiron','titan','tocan','todos','toldo','tonal','tongo','tonta','torax','torca','torpe','torso','toser','trago','trama','trepa','trigo','tromp','trozo','tucan','tumor','turba','turco','tuteo','unico','union','urano','urdir','uvero','vacuo','vagas','vapor','varon','veloz','venda','venta','veran','veras','verbo','verga','verso','vicio','video','vigor','viril','virtu','vista','vocal','vodka','volar','volco','votar','vuelo','vulgo','yacer','yarda','yerno','yogur','zafio','zanca','zarpa','zurdo'];
-    const DICT=[...new Set(WORDS.filter(w=>w.length===5))];
-    const ROWS=6,COLS=5;
-    const KB_ROWS=[['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l','ñ'],['ENTER','z','x','c','v','b','n','m','⌫']];
-    let wlTarget='',wlGuesses=[],wlCurrent='',wlOver=false,wlAnimating=false,wlTimerInterval=null,wlStreak=0;
-    function todayKey(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
-    function wordForDate(dateKey){let hash=0;for(let i=0;i<dateKey.length;i++)hash=(hash*31+dateKey.charCodeAt(i))>>>0;return DICT[hash%DICT.length];}
-    function normalize(s){return s.toLowerCase().replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u').replace(/ü/g,'u');}
+
+    // ── Palabra del día: pool grande de palabras españolas de 5 letras ──
+    const WORD_POOL = [
+      'abajo','abeja','abrir','abuso','acaso','acero','acido','acoso','actor','agudo',
+      'aguja','ahora','aires','ajeno','alado','alamo','album','aleta','alfil','algas',
+      'alias','alijo','almas','altar','altos','amado','amago','ameba','ameno','amigo',
+      'amino','antes','anzol','aorta','apego','apoyo','arena','armas','arpon','arras',
+      'artes','asado','asear','asilo','asomo','astro','atajo','ataud','atlas','atole',
+      'atomo','audio','avena','avion','aviso','ayuda','azote','babor','bahia','balde',
+      'banco','banda','bando','barba','barca','barro','baton','bazar','bella','berro',
+      'besar','bilis','birra','blusa','bocio','bolsa','bomba','borde','bordo','borla',
+      'botin','bravo','brisa','broca','bruja','buche','bueno','buque','burla','busca',
+      'buzon','cabal','cable','cacao','cajon','calco','caldo','calmo','calor','cameo',
+      'campo','canal','canto','caoba','capon','capaz','cargo','carne','carpa','carta',
+      'casco','caspa','causa','cavar','cazar','cebra','cegar','celda','celos','censo',
+      'cerdo','cerro','cerco','cesta','chico','chivo','cisne','citar','claro','clavo',
+      'cocer','colmo','color','comba','comer','comun','coral','corro','corte','corvo',
+      'cosmo','costo','crema','criba','cruce','cruel','cuajo','cuero','cueva','culpa',
+      'culto','cuota','curar','curva','danza','dardo','datos','debil','decir','delta',
+      'dense','deseo','deuda','dieta','digno','disco','divan','dobla','dolor','donde',
+      'dorar','droga','dulce','dunas','duque','duras','ebano','echar','edema','ejote',
+      'enero','enojo','entre','envio','erizo','error','espia','estoy','etapa','etnia',
+      'evita','exito','extra','fabro','facil','fajin','falda','fango','farsa','fauno',
+      'favor','fecal','felpa','feria','ferro','fibra','fideo','fiero','firma','flaco',
+      'flama','flato','fleco','flema','flora','flujo','fobia','fogon','folio','fondo',
+      'forja','forma','forro','fosco','freno','fresa','frito','fruto','fuego','fuera',
+      'funda','gaban','gafas','galan','gamba','garra','garza','gatos','genio','gesta',
+      'giron','glosa','golpe','gorra','gotas','gozan','graba','grado','grama','graso',
+      'gripe','gruta','guapo','guasa','gubia','guion','guiso','gusto','habla','hacer',
+      'hacha','hampa','harto','hasta','hecho','helio','heroe','hielo','hogar','honda',
+      'honor','horca','horma','hosco','hotel','hueco','hueso','huevo','huida','humor',
+      'huron','icono','ideal','igual','impar','incas','indio','input','intro','itrio',
+      'jabon','jaleo','jamon','jarro','jemer','jerga','jiron','joule','juego','jueza',
+      'jugar','junco','junto','jurar','karma','koala','largo','labia','labio','lanar',
+      'lanza','lapiz','larga','laton','lauca','laudo','lavar','lazos','lecho','legar',
+      'lento','lerdo','levar','libre','lidia','limon','linea','lista','llano','llega',
+      'llena','lleva','lloro','lonja','loros','lucha','lugar','lunar','macho','madre',
+      'magia','magno','mando','manga','manso','manto','marca','mareo','marte','marzo',
+      'masas','maton','mayor','mecer','mejor','melon','menor','mente','mesio','metal',
+      'meter','micro','miedo','minas','miope','misil','mismo','mitad','mitin','modal',
+      'mojar','molde','monje','moral','morro','morsa','mosca','motor','moton','mucho',
+      'muela','multa','mundo','mural','nacar','nadie','nafta','narco','navio','nerdo',
+      'nicho','nivel','noble','norma','norte','novio','nuevo','numen','oasis','obeso',
+      'ocean','ocelo','odiar','oeste','ojera','ondas','opaco','opina','orden','orgia',
+      'orlar','ostia','otero','oveja','pablo','padre','palco','palmo','palto','pampa',
+      'panel','paneo','panza','papel','parco','pared','pasmo','pasto','patio','pausa',
+      'pecar','pedal','pegar','peine','penas','perla','perro','pesar','piano','picas',
+      'pilma','pinco','pinto','piojo','pipas','pisar','pisco','piton','pizza','plaga',
+      'plano','plata','plaza','plomo','pluma','poder','poema','poleo','polvo','pompa',
+      'poner','porco','posma','potro','pozal','presa','primo','prosa','puedo','pujar',
+      'pulga','pulpo','punta','purga','queja','quien','quina','radar','rajar','rampa',
+      'rasgo','raton','rayar','razon','recto','redon','regla','reina','reloj','renco',
+      'renta','resol','retro','riada','rifle','rigor','rioja','ripio','rival','robot',
+      'robre','rocio','rodeo','rojez','rollo','rombo','ronco','ronin','roque','rosal',
+      'rosco','rozar','rubor','ruido','ruina','rumba','rumbo','sabia','sacro','salir',
+      'salmo','salon','salsa','salto','salud','salvo','samba','sanos','savia','secar',
+      'selon','selva','sepia','seria','servo','sismo','sitio','sobre','sofar','solar',
+      'soler','sonar','soplo','sorbo','sordo','sorna','suave','sudor','sueco','suelo',
+      'suite','sulco','surco','tabla','tacos','tanto','tapiz','tarso','tasas','tauro',
+      'tejon','tenor','termo','tifus','tigre','timba','tiple','tiron','titan','tocan',
+      'todos','toldo','tonal','tongo','tonta','torax','torca','torpe','torso','toser',
+      'trago','trama','trepa','trigo','trozo','tucan','tumor','turba','turco','tuteo',
+      'unico','union','urano','urdir','uvero','vacuo','vagas','vapor','varon','veloz',
+      'venda','venta','veran','veras','verbo','verga','verso','vicio','video','vigor',
+      'viril','virtu','vista','vocal','vodka','volar','volco','votar','vuelo','vulgo',
+      'yacer','yarda','yerno','yogur','zafio','zanca','zarpa','zurdo','abuso','acero',
+      'adios','afano','agave','agite','ajena','aloja','amiga','ancla','ancho','angon',
+      'ansia','apaga','apoya','arcen','arder','ardor','arelo','arfar','arida','ariel',
+      'aromo','arpon','arras','asado','asear','asela','asilo','asola','astil','atado',
+      'atajo','atrio','atroz','augur','aullar','avaro','avena','avida','aviso','ayuno',
+      'azadon','azahar','azote','azucar','badajo','bagaje','bajel','balar','balcon','balsa',
+      'banal','banco','banda','bardo','baron','barro','basar','batir','beber','belga',
+      'bella','bezar','bicho','bingo','birlo','bison','bledo','boato','bobia','bocal',
+      'bogar','bogot','bolar','bolso','bonal','bonzo','bordo','borgo','boron','borra',
+      'bosco','bover','bozal','brama','brazo','brega','breve','brial','brial','briga',
+      'bruta','buido','bujar','bulbo','bulle','buque','burgo','burin','buzon','cabal',
+      'cabra','cacto','cadmo','cajon','calan','calco','caldo','caliz','calma','calvo',
+      'campo','caney','canon','canto','canya','caoba','carga','caria','carpa','carpe',
+      'causa','cavar','cebar','ceder','cegar','celda','cembo','cesar','checa','chile',
+      'chino','choza','cieno','cifra','cigua','cilio','cinco','circo','cisco','cisma',
+      'citar','claro','clase','clavo','clero','cobre','cocer','coevo','cofia','coger',
+      'colar','colmo','color','colza','comer','comun','conde','copal','cormo','corpo',
+      'corso','corto','crasa','credo','crema','crica','crino','criar','crino','cromo',
+      'cruce','cruel','cuajo','cuero','cueva','culpa','culto','cumba','cunar','curar',
+      'curva','cuzco','daina','damar','datar','debil','decir','delta','denso','derby',
+      'dieta','digno','disco','diton','doblo','dolmo','dolor','donde','dopar','dorar',
+      'drama','drupa','ducha','dulce','dunas','duque','duras','ebano','echar','edema',
+      'ejote','enero','enojo','entre','envio','erizo','error','espia','etapa','etnia',
+      'evita','exito','extra','fabro','facil','faldo','fango','farsa','fauno','favor',
+      'fecal','felpa','feria','ferro','fibra','fideo','fiero','firma','flaca','flama',
+      'flato','fleco','flema','flora','flujo','fobia','fogon','folio','fondo','forja',
+      'forma','forro','fosco','frena','fresa','frito','fruto','fuego','fuera','funda',
+      'gaban','gafas','galan','gamba','garra','garza','gatos','genio','gesta','giron',
+      'glosa','golpe','gorra','gotas','gozan','graba','grado','grama','graso','gripe',
+      'gruta','guapo','guasa','gubia','guion','guiso','gusto','habla','hacer','hacha',
+      'hampa','harto','hasta','hecho','helio','heroe','hielo','hogar','honda','honor',
+      'horca','horma','hosco','hotel','hueco','hueso','huevo','huida','humor','huron',
+      'icono','ideal','igual','impar','incas','indio','largo','labia','labio','lanar',
+      'lanza','lapiz','larga','laton','lauca','laudo','lavar','lazos','lecho','legar',
+      'lento','lerdo','levar','libre','lidia','limon','linea','lista','llano','llega'
+    ];
+
+    // Filtrar solo palabras de exactamente 5 letras únicas
+    const DICT = [...new Set(WORD_POOL.filter(w => w.length === 5))];
+
+    // Caché de validación IA para no repetir consultas
+    const aiValidationCache = {};
+
+    const ROWS=6, COLS=5;
+    const KB_ROWS=[
+      ['q','w','e','r','t','y','u','i','o','p'],
+      ['a','s','d','f','g','h','j','k','l','ñ'],
+      ['ENTER','z','x','c','v','b','n','m','⌫']
+    ];
+
+    let wlTarget='', wlGuesses=[], wlCurrent='', wlOver=false, wlAnimating=false;
+    let wlTimerInterval=null, wlStreak=0, wlValidating=false;
+
+    function todayKey(){
+      const n=new Date();
+      return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+    }
+
+    function wordForDate(dateKey){
+      let hash=0;
+      for(let i=0;i<dateKey.length;i++) hash=(hash*31+dateKey.charCodeAt(i))>>>0;
+      return DICT[hash % DICT.length];
+    }
+
+    function normalize(s){
+      return s.toLowerCase()
+        .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+        .replace(/ó/g,'o').replace(/ú/g,'u').replace(/ü/g,'u');
+    }
+
     function wlStateKey(){return 'wl_state_'+todayKey()+'_'+(getSession()||'guest');}
     function saveWlState(){localStorage.setItem(wlStateKey(),JSON.stringify({guesses:wlGuesses,over:wlOver,streak:wlStreak}));}
     function loadWlState(){const raw=localStorage.getItem(wlStateKey());if(!raw)return null;try{return JSON.parse(raw);}catch(e){return null;}}
     function wlStreakKey(){return 'wl_streak_'+(getSession()||'guest');}
     function loadStreak(){return parseInt(localStorage.getItem(wlStreakKey())||'0');}
     function saveStreak(n){localStorage.setItem(wlStreakKey(),String(n));}
-    function formatDate(){const n=new Date();const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return n.getDate()+' '+meses[n.getMonth()]+' '+n.getFullYear();}
-    function buildGrid(){const grid=document.getElementById('wl-grid');grid.innerHTML='';for(let r=0;r<ROWS;r++){const row=document.createElement('div');row.className='wl-row';row.id='wl-row-'+r;for(let c=0;c<COLS;c++){const cell=document.createElement('div');cell.className='wl-cell';cell.id='wl-cell-'+r+'-'+c;row.appendChild(cell);}grid.appendChild(row);}}
-    function buildKeyboard(){const kb=document.getElementById('wl-keyboard');kb.innerHTML='';KB_ROWS.forEach(rowKeys=>{const row=document.createElement('div');row.className='wl-kb-row';rowKeys.forEach(k=>{const btn=document.createElement('button');btn.className='wl-key'+(k.length>1?' wide':'');btn.textContent=k;btn.dataset.key=k;btn.addEventListener('click',()=>wlHandleKey(k));row.appendChild(btn);});kb.appendChild(row);});}
-    function wlEvaluate(guess,target){const result=Array(COLS).fill(null).map((_,i)=>({letter:guess[i],status:'absent'}));const targetArr=target.split('');const used=Array(COLS).fill(false);for(let i=0;i<COLS;i++){if(guess[i]===target[i]){result[i].status='correct';used[i]=true;}}for(let i=0;i<COLS;i++){if(result[i].status==='correct')continue;for(let j=0;j<COLS;j++){if(!used[j]&&guess[i]===target[j]){result[i].status='present';used[j]=true;break;}}}return result;}
-    function wlHandleKey(k){if(wlOver||wlAnimating)return;if(k==='⌫'||k==='Backspace'){if(wlCurrent.length>0){wlCurrent=wlCurrent.slice(0,-1);wlRenderCurrent();}return;}if(k==='ENTER'||k==='Enter'){wlSubmit();return;}const letter=normalize(k);if(!/^[a-záéíóúüñ]$/.test(letter))return;if(wlCurrent.length<COLS){wlCurrent+=letter;wlRenderCurrent();const cell=document.getElementById('wl-cell-'+wlGuesses.length+'-'+(wlCurrent.length-1));if(cell){cell.classList.add('pop');setTimeout(()=>cell.classList.remove('pop'),120);}}}
-    function wlRenderCurrent(){const row=wlGuesses.length;for(let c=0;c<COLS;c++){const cell=document.getElementById('wl-cell-'+row+'-'+c);if(!cell)return;const letter=wlCurrent[c]||'';cell.textContent=letter.toUpperCase();cell.className='wl-cell'+(letter?' filled':'');}}
-    function wlSubmit(){if(wlCurrent.length<COLS){wlToast('FALTAN LETRAS');wlShakeRow(wlGuesses.length);return;}if(!DICT.includes(wlCurrent)){wlToast('PALABRA NO VÁLIDA');wlShakeRow(wlGuesses.length);return;}const guess=wlCurrent;const result=wlEvaluate(guess,wlTarget);const rowIdx=wlGuesses.length;wlGuesses.push(guess);wlCurrent='';wlAnimating=true;result.forEach((r,c)=>{const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);setTimeout(()=>{cell.classList.add('flip');setTimeout(()=>{cell.textContent=r.letter.toUpperCase();cell.className='wl-cell '+r.status;},250);},c*100);});setTimeout(()=>{wlAnimating=false;wlUpdateKeyboard(result);const won=result.every(r=>r.status==='correct');if(won){wlOver=true;wlStreak=loadStreak()+1;saveStreak(wlStreak);setTimeout(()=>{for(let c=0;c<COLS;c++){const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);setTimeout(()=>{cell.classList.add('dance');setTimeout(()=>cell.classList.remove('dance'),700);},c*80);}},200);setTimeout(()=>{const msg=['GENIAL!','INCREIBLE!','PERFECTO!','BRILLANTE!','MAESTRO!','EXCEPCIONAL!'];wlToast(msg[Math.min(rowIdx,5)],2500);wlShowResult(true,rowIdx+1);wlStartNextTimer();const user=getSession();if(user)safeAddScore('wordle',user,{score:7-(rowIdx+1),intentoGanador:rowIdx+1,racha:wlStreak});},600);}else if(wlGuesses.length>=ROWS){wlOver=true;saveStreak(0);setTimeout(()=>{wlShowResult(false,0);wlStartNextTimer();},400);}saveWlState();},COLS*100+400);}
-    function wlUpdateKeyboard(result){const priority={correct:3,present:2,absent:1};result.forEach(r=>{const btn=document.querySelector(`.wl-key[data-key="${r.letter}"]`);if(!btn)return;const cur=btn.dataset.status||'';if(!cur||(priority[r.status]||0)>(priority[cur]||0)){btn.className='wl-key'+(r.letter.length>1?' wide':'')+' '+r.status;btn.dataset.status=r.status;}});}
-    function wlShakeRow(rowIdx){const row=document.getElementById('wl-row-'+rowIdx);if(!row)return;row.classList.add('shake');setTimeout(()=>row.classList.remove('shake'),400);}
-    function wlToast(msg,dur=1500){const t=document.getElementById('wl-toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
-    function wlShowResult(won,attempt){const el=document.getElementById('wl-result');if(won){el.className='wl-result win';el.textContent='🎉 GANASTE EN '+attempt+' INTENTO'+(attempt===1?'':'S')+'!';}else{el.className='wl-result lose';el.innerHTML='LA PALABRA ERA <span class="wl-answer">'+wlTarget.toUpperCase()+'</span>';}}
-    function wlStartNextTimer(){document.getElementById('wl-next-section').style.display='block';function tick(){const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);const diff=Math.max(0,midnight-now);const h=Math.floor(diff/3600000);const m=Math.floor((diff%3600000)/60000);const s=Math.floor((diff%60000)/1000);document.getElementById('wl-next-timer').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}tick();wlTimerInterval=setInterval(tick,1000);}
-    function wlRestoreGuesses(saved){saved.guesses.forEach((guess,rowIdx)=>{const result=wlEvaluate(guess,wlTarget);result.forEach((r,c)=>{const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);cell.textContent=r.letter.toUpperCase();cell.className='wl-cell '+r.status;});wlUpdateKeyboard(result);});}
-    function openWordle(){clearInterval(wlTimerInterval);wlTarget=wordForDate(todayKey());wlGuesses=[];wlCurrent='';wlOver=false;wlAnimating=false;wlStreak=loadStreak();document.getElementById('wl-date-pill').textContent=formatDate();document.getElementById('wl-result').textContent='';document.getElementById('wl-result').className='wl-result';document.getElementById('wl-next-section').style.display='none';buildGrid();buildKeyboard();const saved=loadWlState();if(saved&&saved.guesses&&saved.guesses.length>0){wlGuesses=saved.guesses;wlOver=saved.over||false;wlStreak=saved.streak||wlStreak;wlRestoreGuesses(saved);if(wlOver){const lastGuess=wlGuesses[wlGuesses.length-1];const won=lastGuess===wlTarget;wlShowResult(won,won?wlGuesses.length:0);wlStartNextTimer();}}document.getElementById('modal-wordle').classList.add('open');const user=getSession();if(user)safeRegisterPlayer('wordle',user);}
-    document.addEventListener('keydown',e=>{if(!document.getElementById('modal-wordle').classList.contains('open'))return;if(document.activeElement&&document.activeElement.tagName==='INPUT')return;const k=e.key;if(k==='Backspace')wlHandleKey('⌫');else if(k==='Enter')wlHandleKey('ENTER');else if(/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]$/.test(k))wlHandleKey(normalize(k));});
+
+    function formatDate(){
+      const n=new Date();
+      const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      return n.getDate()+' '+meses[n.getMonth()]+' '+n.getFullYear();
+    }
+
+    // ── VALIDACIÓN CON IA ──
+    async function validateWordWithAI(word) {
+      // La palabra target siempre es válida
+      if (word === wlTarget) return true;
+
+      // Verificar caché
+      if (aiValidationCache[word] !== undefined) return aiValidationCache[word];
+
+      // Verificar en lista local primero (respuesta instantánea)
+      if (DICT.includes(word)) {
+        aiValidationCache[word] = true;
+        return true;
+      }
+
+      // Consultar Claude API
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 50,
+            system: `Eres un validador de palabras para el juego Wordle en español. 
+Tu única tarea es determinar si una palabra de exactamente 5 letras existe en el español estándar.
+Responde ÚNICAMENTE con "SI" o "NO", sin explicaciones ni puntuación.
+Acepta: sustantivos, verbos (conjugados o en infinitivo), adjetivos, adverbios de cualquier variante del español (España, Latinoamérica, etc.).
+Rechaza: palabras que no existen en español, nombres propios, siglas, palabras en otros idiomas.`,
+            messages: [{
+              role: 'user',
+              content: `¿Existe la palabra "${word}" en español? (responde solo SI o NO)`
+            }]
+          })
+        });
+
+        const data = await response.json();
+        const answer = data.content?.[0]?.text?.trim().toUpperCase() || 'NO';
+        const isValid = answer.startsWith('SI');
+        aiValidationCache[word] = isValid;
+        return isValid;
+      } catch(err) {
+        console.warn('Error validando con IA, usando lista local:', err);
+        // Fallback: aceptar si tiene al menos 5 letras válidas en español
+        const isValid = /^[a-záéíóúüñ]{5}$/.test(word);
+        aiValidationCache[word] = isValid;
+        return isValid;
+      }
+    }
+
+    function setKeyboardDisabled(disabled) {
+      document.querySelectorAll('.wl-key').forEach(k => {
+        if (disabled) k.setAttribute('disabled', '');
+        else k.removeAttribute('disabled');
+      });
+    }
+
+    function buildGrid(){
+      const grid=document.getElementById('wl-grid');
+      grid.innerHTML='';
+      for(let r=0;r<ROWS;r++){
+        const row=document.createElement('div');
+        row.className='wl-row';
+        row.id='wl-row-'+r;
+        for(let c=0;c<COLS;c++){
+          const cell=document.createElement('div');
+          cell.className='wl-cell';
+          cell.id='wl-cell-'+r+'-'+c;
+          row.appendChild(cell);
+        }
+        grid.appendChild(row);
+      }
+    }
+
+    function buildKeyboard(){
+      const kb=document.getElementById('wl-keyboard');
+      kb.innerHTML='';
+      KB_ROWS.forEach(rowKeys=>{
+        const row=document.createElement('div');
+        row.className='wl-kb-row';
+        rowKeys.forEach(k=>{
+          const btn=document.createElement('button');
+          btn.className='wl-key'+(k.length>1?' wide':'');
+          btn.textContent=k;
+          btn.dataset.key=k;
+          btn.addEventListener('click',()=>wlHandleKey(k));
+          row.appendChild(btn);
+        });
+        kb.appendChild(row);
+      });
+    }
+
+    function wlEvaluate(guess, target){
+      const result=Array(COLS).fill(null).map((_,i)=>({letter:guess[i],status:'absent'}));
+      const targetArr=target.split('');
+      const used=Array(COLS).fill(false);
+      for(let i=0;i<COLS;i++){
+        if(guess[i]===target[i]){result[i].status='correct';used[i]=true;}
+      }
+      for(let i=0;i<COLS;i++){
+        if(result[i].status==='correct')continue;
+        for(let j=0;j<COLS;j++){
+          if(!used[j]&&guess[i]===target[j]){result[i].status='present';used[j]=true;break;}
+        }
+      }
+      return result;
+    }
+
+    function wlHandleKey(k){
+      if(wlOver||wlAnimating||wlValidating)return;
+      if(k==='⌫'||k==='Backspace'){
+        if(wlCurrent.length>0){wlCurrent=wlCurrent.slice(0,-1);wlRenderCurrent();}
+        return;
+      }
+      if(k==='ENTER'||k==='Enter'){wlSubmit();return;}
+      const letter=normalize(k);
+      if(!/^[a-záéíóúüñ]$/.test(letter))return;
+      if(wlCurrent.length<COLS){
+        wlCurrent+=letter;
+        wlRenderCurrent();
+        const cell=document.getElementById('wl-cell-'+wlGuesses.length+'-'+(wlCurrent.length-1));
+        if(cell){cell.classList.add('pop');setTimeout(()=>cell.classList.remove('pop'),120);}
+      }
+    }
+
+    function wlRenderCurrent(){
+      const row=wlGuesses.length;
+      for(let c=0;c<COLS;c++){
+        const cell=document.getElementById('wl-cell-'+row+'-'+c);
+        if(!cell)return;
+        const letter=wlCurrent[c]||'';
+        cell.textContent=letter.toUpperCase();
+        cell.className='wl-cell'+(letter?' filled':'');
+      }
+    }
+
+    async function wlSubmit(){
+      if(wlCurrent.length<COLS){wlToast('FALTAN LETRAS');wlShakeRow(wlGuesses.length);return;}
+      if(wlOver||wlAnimating||wlValidating)return;
+
+      // Activar estado de validación
+      wlValidating=true;
+      setKeyboardDisabled(true);
+
+      // Mostrar efecto visual de validación en las celdas
+      const rowIdx=wlGuesses.length;
+      for(let c=0;c<COLS;c++){
+        const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
+        if(cell) cell.classList.add('validating');
+      }
+      wlToastValidating('CONSULTANDO IA...');
+
+      // Validar con IA
+      const isValid = await validateWordWithAI(wlCurrent);
+
+      // Quitar efecto validación
+      for(let c=0;c<COLS;c++){
+        const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
+        if(cell) cell.classList.remove('validating');
+      }
+      hideToastValidating();
+      setKeyboardDisabled(false);
+      wlValidating=false;
+
+      if(!isValid){
+        wlToast('PALABRA NO VÁLIDA EN ESPAÑOL');
+        wlShakeRow(rowIdx);
+        return;
+      }
+
+      // Procesar intento válido
+      const guess=wlCurrent;
+      const result=wlEvaluate(guess,wlTarget);
+      wlGuesses.push(guess);
+      wlCurrent='';
+      wlAnimating=true;
+
+      result.forEach((r,c)=>{
+        const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
+        setTimeout(()=>{
+          cell.classList.add('flip');
+          setTimeout(()=>{
+            cell.textContent=r.letter.toUpperCase();
+            cell.className='wl-cell '+r.status;
+          },250);
+        },c*100);
+      });
+
+      setTimeout(()=>{
+        wlAnimating=false;
+        wlUpdateKeyboard(result);
+        const won=result.every(r=>r.status==='correct');
+        if(won){
+          wlOver=true;
+          wlStreak=loadStreak()+1;
+          saveStreak(wlStreak);
+          setTimeout(()=>{
+            for(let c=0;c<COLS;c++){
+              const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
+              setTimeout(()=>{cell.classList.add('dance');setTimeout(()=>cell.classList.remove('dance'),700);},c*80);
+            }
+          },200);
+          setTimeout(()=>{
+            const msg=['GENIAL!','INCREIBLE!','PERFECTO!','BRILLANTE!','MAESTRO!','EXCEPCIONAL!'];
+            wlToast(msg[Math.min(rowIdx,5)],2500);
+            wlShowResult(true,rowIdx+1);
+            wlStartNextTimer();
+            const user=getSession();
+            if(user)safeAddScore('wordle',user,{score:7-(rowIdx+1),intentoGanador:rowIdx+1,racha:wlStreak});
+          },600);
+        }else if(wlGuesses.length>=ROWS){
+          wlOver=true;
+          saveStreak(0);
+          setTimeout(()=>{wlShowResult(false,0);wlStartNextTimer();},400);
+        }
+        saveWlState();
+      },COLS*100+400);
+    }
+
+    let _validatingToastTimeout=null;
+    function wlToastValidating(msg){
+      const t=document.getElementById('wl-toast');
+      t.textContent=msg;
+      t.className='wl-toast validating-toast show';
+    }
+    function hideToastValidating(){
+      const t=document.getElementById('wl-toast');
+      t.classList.remove('show');
+      setTimeout(()=>{t.className='wl-toast';},300);
+    }
+
+    function wlUpdateKeyboard(result){
+      const priority={correct:3,present:2,absent:1};
+      result.forEach(r=>{
+        const btn=document.querySelector(`.wl-key[data-key="${r.letter}"]`);
+        if(!btn)return;
+        const cur=btn.dataset.status||'';
+        if(!cur||(priority[r.status]||0)>(priority[cur]||0)){
+          btn.className='wl-key'+(r.letter.length>1?' wide':'')+' '+r.status;
+          btn.dataset.status=r.status;
+        }
+      });
+    }
+
+    function wlShakeRow(rowIdx){
+      const row=document.getElementById('wl-row-'+rowIdx);
+      if(!row)return;
+      row.classList.add('shake');
+      setTimeout(()=>row.classList.remove('shake'),400);
+    }
+
+    function wlToast(msg,dur=1500){
+      const t=document.getElementById('wl-toast');
+      t.textContent=msg;
+      t.className='wl-toast show';
+      setTimeout(()=>t.classList.remove('show'),dur);
+    }
+
+    function wlShowResult(won,attempt){
+      const el=document.getElementById('wl-result');
+      if(won){
+        el.className='wl-result win';
+        el.textContent='🎉 GANASTE EN '+attempt+' INTENTO'+(attempt===1?'':'S')+'!';
+      }else{
+        el.className='wl-result lose';
+        el.innerHTML='LA PALABRA ERA <span class="wl-answer">'+wlTarget.toUpperCase()+'</span>';
+      }
+    }
+
+    function wlStartNextTimer(){
+      document.getElementById('wl-next-section').style.display='block';
+      function tick(){
+        const now=new Date();
+        const midnight=new Date(now);
+        midnight.setHours(24,0,0,0);
+        const diff=Math.max(0,midnight-now);
+        const h=Math.floor(diff/3600000);
+        const m=Math.floor((diff%3600000)/60000);
+        const s=Math.floor((diff%60000)/1000);
+        document.getElementById('wl-next-timer').textContent=
+          String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+      }
+      tick();
+      wlTimerInterval=setInterval(tick,1000);
+    }
+
+    function wlRestoreGuesses(saved){
+      saved.guesses.forEach((guess,rowIdx)=>{
+        const result=wlEvaluate(guess,wlTarget);
+        result.forEach((r,c)=>{
+          const cell=document.getElementById('wl-cell-'+rowIdx+'-'+c);
+          cell.textContent=r.letter.toUpperCase();
+          cell.className='wl-cell '+r.status;
+        });
+        wlUpdateKeyboard(result);
+      });
+    }
+
+    function openWordle(){
+      clearInterval(wlTimerInterval);
+      wlTarget=wordForDate(todayKey());
+      wlGuesses=[];wlCurrent='';wlOver=false;wlAnimating=false;wlValidating=false;
+      wlStreak=loadStreak();
+      document.getElementById('wl-date-pill').textContent=formatDate();
+      document.getElementById('wl-result').textContent='';
+      document.getElementById('wl-result').className='wl-result';
+      document.getElementById('wl-next-section').style.display='none';
+      buildGrid();
+      buildKeyboard();
+      const saved=loadWlState();
+      if(saved&&saved.guesses&&saved.guesses.length>0){
+        wlGuesses=saved.guesses;
+        wlOver=saved.over||false;
+        wlStreak=saved.streak||wlStreak;
+        wlRestoreGuesses(saved);
+        if(wlOver){
+          const lastGuess=wlGuesses[wlGuesses.length-1];
+          const won=lastGuess===wlTarget;
+          wlShowResult(won,won?wlGuesses.length:0);
+          wlStartNextTimer();
+        }
+      }
+      document.getElementById('modal-wordle').classList.add('open');
+      const user=getSession();
+      if(user)safeRegisterPlayer('wordle',user);
+    }
+
+    document.addEventListener('keydown',e=>{
+      if(!document.getElementById('modal-wordle').classList.contains('open'))return;
+      if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
+      const k=e.key;
+      if(k==='Backspace')wlHandleKey('⌫');
+      else if(k==='Enter')wlHandleKey('ENTER');
+      else if(/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]$/.test(k))wlHandleKey(normalize(k));
+    });
+
     document.getElementById('game-card-wordle').addEventListener('click',openWordle);
-    document.getElementById('modal-wordle-close').addEventListener('click',()=>{document.getElementById('modal-wordle').classList.remove('open');clearInterval(wlTimerInterval);});
-    document.getElementById('modal-wordle').addEventListener('click',e=>{if(e.target===document.getElementById('modal-wordle')){document.getElementById('modal-wordle').classList.remove('open');clearInterval(wlTimerInterval);}});
+    document.getElementById('modal-wordle-close').addEventListener('click',()=>{
+      document.getElementById('modal-wordle').classList.remove('open');
+      clearInterval(wlTimerInterval);
+    });
+    document.getElementById('modal-wordle').addEventListener('click',e=>{
+      if(e.target===document.getElementById('modal-wordle')){
+        document.getElementById('modal-wordle').classList.remove('open');
+        clearInterval(wlTimerInterval);
+      }
+    });
   })();
   </script>
 </body>
