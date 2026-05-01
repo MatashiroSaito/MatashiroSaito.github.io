@@ -84,6 +84,9 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .diff-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);}
 .diff-dot.active{background:var(--neon-gold);box-shadow:0 0 4px var(--neon-gold);}
 
+/* WORDLE CARD THUMB IMAGE */
+.card-thumb-wordle-img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;border-radius:0;}
+
 /* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(3,5,15,0.92);backdrop-filter:blur(16px);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .modal-overlay.open{opacity:1;pointer-events:all;}
@@ -225,10 +228,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .pz-restart-btn:hover{background:rgba(0,245,255,0.1);}
 .pz-ghost-drag{position:fixed;pointer-events:none;z-index:9999;border-radius:6px;opacity:0.85;transform:translate(-50%,-50%);background-size:cover;}
 
-/* ══════════════════════════════════════════════
-   WORDLE — FIX: color explícito en todas las
-   variantes de celda para evitar texto invisible
-   ══════════════════════════════════════════════ */
+/* WORDLE */
 .modal-wordle-inner{width:520px;max-width:96vw;}
 .wl-daily-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.2rem;}
 .wl-daily-pill{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--neon-green);border:1px solid rgba(0,255,136,0.3);background:rgba(0,255,136,0.06);border-radius:20px;padding:4px 14px;}
@@ -238,38 +238,21 @@ main{flex:1;padding:2rem;overflow-y:auto;}
 .wl-ai-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-purple);animation:pulse 1.5s infinite;}
 .wl-grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;margin:0 auto 1.2rem;width:fit-content;}
 .wl-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-
-/* FIX PRINCIPAL: color siempre explícito, sin depender de herencia */
 .wl-cell{
   width:52px;height:52px;border-radius:8px;
   background:var(--wl-empty);
   border:2px solid var(--wl-border);
   display:flex;align-items:center;justify-content:center;
   font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;
-  color:#e8f0ff;           /* color fijo, nunca invisible */
+  color:#e8f0ff;
   transition:border-color 0.15s;
   position:relative;
   transform-style:preserve-3d;
-  /* Sin transform residual */
 }
-.wl-cell.filled{
-  border-color:rgba(0,245,255,0.5);
-  color:#e8f0ff !important; /* forzar visibilidad al escribir */
-}
-.wl-cell.correct{
-  background:var(--wl-correct);border-color:var(--wl-correct);
-  color:#fff !important;
-  text-shadow:0 0 8px rgba(0,200,83,0.6);box-shadow:0 0 14px rgba(0,200,83,0.4);
-}
-.wl-cell.present{
-  background:var(--wl-present);border-color:var(--wl-present);
-  color:#fff !important;
-  text-shadow:0 0 8px rgba(255,152,0,0.6);box-shadow:0 0 14px rgba(255,152,0,0.4);
-}
-.wl-cell.absent{
-  background:var(--wl-absent);border-color:rgba(0,245,255,0.08);
-  color:#7a8ab0 !important; /* text-muted fijo */
-}
+.wl-cell.filled{border-color:rgba(0,245,255,0.5);color:#e8f0ff !important;}
+.wl-cell.correct{background:var(--wl-correct);border-color:var(--wl-correct);color:#fff !important;text-shadow:0 0 8px rgba(0,200,83,0.6);box-shadow:0 0 14px rgba(0,200,83,0.4);}
+.wl-cell.present{background:var(--wl-present);border-color:var(--wl-present);color:#fff !important;text-shadow:0 0 8px rgba(255,152,0,0.6);box-shadow:0 0 14px rgba(255,152,0,0.4);}
+.wl-cell.absent{background:var(--wl-absent);border-color:rgba(0,245,255,0.08);color:#7a8ab0 !important;}
 .wl-cell.validating{border-color:var(--neon-purple);animation:wl-validating 0.8s ease infinite;}
 @keyframes wl-validating{0%,100%{box-shadow:0 0 4px rgba(191,0,255,0.3);}50%{box-shadow:0 0 16px rgba(191,0,255,0.8);}}
 @keyframes wl-flip{0%{transform:rotateX(0);}50%{transform:rotateX(-90deg);}100%{transform:rotateX(0);}}
@@ -414,10 +397,16 @@ main{flex:1;padding:2rem;overflow-y:auto;}
               <div class="card-meta"><span class="card-tag">PUZZLE</span><div class="diff-dots"><div class="diff-dot active"></div><div class="diff-dot active"></div><div class="diff-dot active"></div></div></div>
             </div>
           </div>
+
+          <!-- ✅ WORDLE: imagen en lugar de emoji -->
           <div class="game-card" id="game-card-wordle">
             <div class="card-new-badge">NUEVO</div>
-            <div class="card-thumb card-thumb-wordle">
-              <div class="thumb-icon">&#129344;</div>
+            <div class="card-thumb card-thumb-wordle" style="padding:0;overflow:hidden;">
+              <img
+                src="https://i.ibb.co/rGdYKRbd/Wordle-Logo.jpg"
+                alt="Wordle"
+                class="card-thumb-wordle-img"
+              />
               <div class="card-thumb-overlay"></div>
               <button class="play-btn">&#9654;</button>
             </div>
@@ -426,6 +415,7 @@ main{flex:1;padding:2rem;overflow-y:auto;}
               <div class="card-meta"><span class="card-tag" style="color:var(--neon-green)">DIARIO</span><div class="diff-dots"><div class="diff-dot active"></div><div class="diff-dot active"></div><div class="diff-dot"></div></div></div>
             </div>
           </div>
+
         </div>
       </main>
     </div>
@@ -748,11 +738,8 @@ main{flex:1;padding:2rem;overflow-y:auto;}
     document.getElementById('modal-puzzle').addEventListener('click',(e)=>{if(e.target===document.getElementById('modal-puzzle'))closePuzzle();});
   })();
 
-  // ══════════════════════════════════════════════════════════════════
-  // ── WORDLE EN ESPAÑOL · CON VALIDACIÓN IA ─────────────────────
-  // ══════════════════════════════════════════════════════════════════
+  // ── WORDLE EN ESPAÑOL · CON VALIDACIÓN IA ──
   (function(){
-
     const WORD_POOL = [
       'abajo','abeja','abrir','abuso','acaso','acero','acido','acoso','actor','agudo',
       'aguja','ahora','aires','ajeno','alado','alamo','album','aleta','alfil','algas',
@@ -974,20 +961,14 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
       }
     }
 
-    // ══════════════════════════════════════════════
-    // FIX PRINCIPAL: wlRenderCurrent siempre itera
-    // las 5 celdas y limpia las vacías correctamente
-    // ══════════════════════════════════════════════
     function wlRenderCurrent(){
       const row=wlGuesses.length;
       for(let c=0;c<COLS;c++){
         const cell=document.getElementById('wl-cell-'+row+'-'+c);
-        if(!cell) continue; // continue, no return
+        if(!cell) continue;
         const letter=wlCurrent[c]||'';
         cell.textContent=letter.toUpperCase();
-        // Resetear clases — solo filled si hay letra, vacío si no
         cell.className='wl-cell'+(letter?' filled':'');
-        // Forzar color visible via style para evitar cualquier herencia CSS problemática
         cell.style.color='';
       }
     }
@@ -1035,7 +1016,7 @@ Rechaza: palabras que no existen en español, nombres propios, siglas, palabras 
           setTimeout(()=>{
             cell.textContent=r.letter.toUpperCase();
             cell.className='wl-cell '+r.status;
-            cell.style.color=''; // limpiar cualquier inline style
+            cell.style.color='';
           },250);
         },c*100);
       });
