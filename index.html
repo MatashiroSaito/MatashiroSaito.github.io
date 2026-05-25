@@ -431,6 +431,17 @@ aside.mobile-open{transform:translateX(0)!important;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(0,245,255,0.3);border-radius:3px;}
+.mobs-random-btn{
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;
+  padding:6px 16px;border-radius:20px;cursor:pointer;
+  background:none;border:1px solid var(--neon-purple);color:var(--neon-purple);
+  transition:all 0.2s;white-space:nowrap;flex-shrink:0;
+}
+.mobs-random-btn:hover{background:rgba(191,0,255,0.1);}
+.mobs-random-active{
+  border-color:var(--neon-gold)!important;color:var(--neon-gold)!important;
+  background:rgba(255,215,0,0.08)!important;
+}
 
 /* ── ANIMATIONS ── */
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(0.95);}}
@@ -851,6 +862,7 @@ aside.mobile-open{transform:translateX(0)!important;}
       <div class="mobs-header-info">
         <span class="mobs-count-badge" id="mobs-count-badge">37 MOBS</span>
         <span class="mobs-hint">👆 Toca para poner en gris · 👆 de nuevo para restaurar</span>
+        <button class="mobs-random-btn" id="mobs-random-btn">🎲 RANDOM 5×5</button>
       </div>
       <div class="mobs-grid" id="mobs-grid"></div>
       <div class="mobs-eliminated-count" id="mobs-eliminated-count"></div>
@@ -1029,91 +1041,223 @@ aside.mobile-open{transform:translateX(0)!important;}
     document.getElementById('modal-wordle').addEventListener('click',e=>{if(e.target===document.getElementById('modal-wordle')){document.getElementById('modal-wordle').classList.remove('open');clearInterval(wlTimerInterval);}});
   })();
 
-  // ── MOBS DE MINECRAFT ──
-  (function(){
-    const MOBS = [
-      {src:'https://i.ibb.co/mVs0X4R5/cabaallo-blanco.jpg',   name:'Caballo Blanco'},
-      {src:'https://i.ibb.co/bRP4tsg8/cabaallo.jpg',           name:'Caballo'},
-      {src:'https://i.ibb.co/MxTQKQrF/burro.jpg',              name:'Burro'},
-      {src:'https://i.ibb.co/KcWDWgyn/caballo-zombie.jpg',     name:'Caballo Zombie'},
-      {src:'https://i.ibb.co/PvWpNZqV/caballo-esqueleto.jpg',  name:'Caballo Esqueleto'},
-      {src:'https://i.ibb.co/tpPssgZC/ara-a-2.jpg',            name:'Araña 2'},
-      {src:'https://i.ibb.co/Z6m2HcTX/ara-a.jpg',              name:'Araña'},
-      {src:'https://i.ibb.co/1tcZ37cM/creeper.jpg',            name:'Creeper'},
-      {src:'https://i.ibb.co/zH6tTsMR/zombie.jpg',             name:'Zombie'},
-      {src:'https://i.ibb.co/TqWGsXJ6/felino.jpg',             name:'Felino'},
-      {src:'https://i.ibb.co/Fb1XkcTJ/gato.jpg',               name:'Gato'},
-      {src:'https://i.ibb.co/nsykxkKv/lobo.jpg',               name:'Lobo'},
-      {src:'https://i.ibb.co/tp0vQdNk/conejo.jpg',             name:'Conejo'},
-      {src:'https://i.ibb.co/5WntxBmR/vaca-champi-on.jpg',     name:'Vaca Champiñón'},
-      {src:'https://i.ibb.co/C32PvGq8/vaca.jpg',               name:'Vaca'},
-      {src:'https://i.ibb.co/HpfT6hJG/oveja.jpg',              name:'Oveja'},
-      {src:'https://i.ibb.co/gMRNnw21/cerdo.jpg',              name:'Cerdo'},
-      {src:'https://i.ibb.co/DHTLRwqP/Gallina.jpg',            name:'Gallina'},
-      {src:'https://i.ibb.co/wFtZc4qq/piblen-zombie.jpg',      name:'Piglin Zombie'},
-      {src:'https://i.ibb.co/5XTNth5R/strider.jpg',            name:'Strider'},
-      {src:'https://i.ibb.co/Rksp26Xw/gas.jpg',                name:'Ghast'},
-      {src:'https://i.ibb.co/fYtbP9bS/cubo-de-magma.jpg',      name:'Cubo de Magma'},
-      {src:'https://i.ibb.co/zhWcTggS/slime.jpg',              name:'Slime'},
-      {src:'https://i.ibb.co/5xTrKmGd/breeze.jpg',             name:'Breeze'},
-      {src:'https://i.ibb.co/prW2BbST/bleiz.jpg',              name:'Blaze'},
-      {src:'https://i.ibb.co/8nn3k7xG/silver-fish.jpg',        name:'Silverfish'},
-      {src:'https://i.ibb.co/NddctqZT/mu-eco-de-nieve.jpg',    name:'Muñeco de Nieve'},
-      {src:'https://i.ibb.co/n8t2wqJb/piblin.jpg',             name:'Piglin'},
-      {src:'https://i.ibb.co/LDRMDbKt/oglin-3.jpg',            name:'Hoglin 3'},
-      {src:'https://i.ibb.co/pj39ZhJP/oglin-2.jpg',            name:'Hoglin 2'},
-      {src:'https://i.ibb.co/BHxXt8s8/oglin.jpg',              name:'Hoglin'},
-      {src:'https://i.ibb.co/JFKRGrnC/ezqueleto-4.jpg',        name:'Esqueleto 4'},
-      {src:'https://i.ibb.co/LXKbkCdK/ezqueleto-3.jpg',        name:'Esqueleto 3'},
-      {src:'https://i.ibb.co/8nZ7DtnP/ezqueleto-2.jpg',        name:'Esqueleto 2'},
-      {src:'https://i.ibb.co/67qbYj24/ezqueleto.jpg',          name:'Esqueleto'},
-      {src:'https://i.ibb.co/JF8b9NTt/zombie-2.jpg',           name:'Zombie 2'},
-      {src:'https://i.ibb.co/8DBXL8xZ/aldeano-zompie.jpg',     name:'Aldeano Zombie'},
-      {src:'https://i.ibb.co/zVt6wsRX/aldeano-normal.jpg',     name:'Aldeano Normal'},
-      {src:'https://i.ibb.co/8gz7fxnc/golen.jpg',              name:'Golem de Hierro'},
-      {src:'https://i.ibb.co/Q30pD4Fv/gusano-morado.jpg',      name:'Gusano Morado'},
-      {src:'https://i.ibb.co/fBW1Hz1/enderman.jpg',            name:'Enderman'},
-      {src:'https://i.ibb.co/m5xh7g80/pendeejo-que-hace-volar.jpg', name:'Shulker'},
-      {src:'https://i.ibb.co/1YWrSxxN/whiter.jpg',             name:'Wither'},
-      {src:'https://i.ibb.co/6GX7v2b/pendejo-azul.jpg',        name:'Wandering Trader'},
-      {src:'https://i.ibb.co/KpjVM0sh/dragon.jpg',             name:'Dragon del End'},
-      {src:'https://i.ibb.co/v6wJN0gw/aldeano.jpg',            name:'Aldeano'},
-      {src:'https://i.ibb.co/5WPHJymn/gigante.jpg',            name:'Gigante'},
-      {src:'https://i.ibb.co/Hpt9JhBX/bruja.jpg',              name:'Bruja'},
-      {src:'https://i.ibb.co/wFwKJwkt/Maldeano-magico.jpg',    name:'Evoker'},
-      {src:'https://i.ibb.co/V03VdFP8/Maldeano-1.jpg',         name:'Pillager'},
-      {src:'https://i.ibb.co/21VzSkym/Maldeano-con-vallesta.jpg', name:'Pillager Ballesta'},
-      {src:'https://i.ibb.co/q30Q9L3q/Maldeano.jpg',           name:'Vindicator'},
-      {src:'https://i.ibb.co/QjNHRsWs/aline-malo.jpg',         name:'Vex'},
-      {src:'https://i.ibb.co/vvT4Dtdn/aline.jpg',              name:'Allay'},
-      {src:'https://i.ibb.co/WRVDpqR/salmon.jpg',              name:'Salmon'},
-      {src:'https://i.ibb.co/Y7DKMpmr/pez-payaso.jpg',         name:'Pez Payaso'},
-      {src:'https://i.ibb.co/S7MmkHNf/pez-globo.jpg',          name:'Pez Globo'},
-      {src:'https://i.ibb.co/G37VMGSq/delfin.jpg',             name:'Delfin'},
-      {src:'https://i.ibb.co/QvftNKkp/ojo-grande.jpg',         name:'Elder Guardian'},
-      {src:'https://i.ibb.co/7tbrjMfH/ojo-peque-o.jpg',        name:'Guardian'},
-      {src:'https://i.ibb.co/N2j6pJhy/pulpo.jpg',              name:'Pulpo'},
-      {src:'https://i.ibb.co/TBh3qWDd/pulpo-brillante.jpg',    name:'Pulpo Brillante'},
-      {src:'https://i.ibb.co/WN1H8vwq/zombie-acuatico.jpg',    name:'Zombie Acuatico'},
-      {src:'https://i.ibb.co/nMmzpNSy/pez.jpg',                name:'Pez'},
-      {src:'https://i.ibb.co/vxbbZd2Y/ajolote.jpg',            name:'Ajolote'},
-      {src:'https://i.ibb.co/zWw0S3Ld/tortuga.jpg',            name:'Tortuga'},
-      {src:'https://i.ibb.co/Cprzm0hs/renacuajo.jpg',          name:'Renacuajo'},
-      {src:'https://i.ibb.co/MkQJ7CbK/rana.jpg',               name:'Rana'},
-      {src:'https://i.ibb.co/k616vwhR/no-se.jpg',              name:'Mob Misterioso'},
-      {src:'https://i.ibb.co/hR3GPq1z/oso-polar.jpg',          name:'Oso Polar'},
-      {src:'https://i.ibb.co/k2KRW09C/armadillo.jpg',          name:'Armadillo'},
-      {src:'https://i.ibb.co/mVgRKTyk/llama-con-montura.jpg',  name:'Llama con Montura'},
-      {src:'https://i.ibb.co/XkVYfcs6/fantom.jpg',             name:'Phantom'},
-      {src:'https://i.ibb.co/23Brdwbx/murcielago.jpg',         name:'Murcielago'},
-      {src:'https://i.ibb.co/XxW1cS1d/abeja.jpg',              name:'Abeja'},
-      {src:'https://i.ibb.co/xSM5s7y0/loro.jpg',               name:'Loro'},
-      {src:'https://i.ibb.co/ksQsmY3n/panda.jpg',              name:'Panda'},
-      {src:'https://i.ibb.co/fVSs4Lry/zorro.jpg',              name:'Zorro'},
-      {src:'https://i.ibb.co/VYhp7zwb/cabra.jpg',              name:'Cabra'},
-      {src:'https://i.ibb.co/CsbdC9xJ/camello.jpg',            name:'Camello'},
-      {src:'https://i.ibb.co/6cpGv58x/llama.jpg',              name:'Llama'},
-    ];
+// ── MOBS DE MINECRAFT ──
+(function(){
+  const MOBS = [
+    {src:'https://i.ibb.co/mVs0X4R5/cabaallo-blanco.jpg',   name:'Caballo Blanco'},
+    {src:'https://i.ibb.co/bRP4tsg8/cabaallo.jpg',           name:'Caballo'},
+    {src:'https://i.ibb.co/MxTQKQrF/burro.jpg',              name:'Burro'},
+    {src:'https://i.ibb.co/KcWDWgyn/caballo-zombie.jpg',     name:'Caballo Zombie'},
+    {src:'https://i.ibb.co/PvWpNZqV/caballo-esqueleto.jpg',  name:'Caballo Esqueleto'},
+    {src:'https://i.ibb.co/tpPssgZC/ara-a-2.jpg',            name:'Araña 2'},
+    {src:'https://i.ibb.co/Z6m2HcTX/ara-a.jpg',              name:'Araña'},
+    {src:'https://i.ibb.co/1tcZ37cM/creeper.jpg',            name:'Creeper'},
+    {src:'https://i.ibb.co/zH6tTsMR/zombie.jpg',             name:'Zombie'},
+    {src:'https://i.ibb.co/TqWGsXJ6/felino.jpg',             name:'Felino'},
+    {src:'https://i.ibb.co/Fb1XkcTJ/gato.jpg',               name:'Gato'},
+    {src:'https://i.ibb.co/nsykxkKv/lobo.jpg',               name:'Lobo'},
+    {src:'https://i.ibb.co/tp0vQdNk/conejo.jpg',             name:'Conejo'},
+    {src:'https://i.ibb.co/5WntxBmR/vaca-champi-on.jpg',     name:'Vaca Champiñón'},
+    {src:'https://i.ibb.co/C32PvGq8/vaca.jpg',               name:'Vaca'},
+    {src:'https://i.ibb.co/HpfT6hJG/oveja.jpg',              name:'Oveja'},
+    {src:'https://i.ibb.co/gMRNnw21/cerdo.jpg',              name:'Cerdo'},
+    {src:'https://i.ibb.co/DHTLRwqP/Gallina.jpg',            name:'Gallina'},
+    {src:'https://i.ibb.co/wFtZc4qq/piblen-zombie.jpg',      name:'Piglin Zombie'},
+    {src:'https://i.ibb.co/5XTNth5R/strider.jpg',            name:'Strider'},
+    {src:'https://i.ibb.co/Rksp26Xw/gas.jpg',                name:'Ghast'},
+    {src:'https://i.ibb.co/fYtbP9bS/cubo-de-magma.jpg',      name:'Cubo de Magma'},
+    {src:'https://i.ibb.co/zhWcTggS/slime.jpg',              name:'Slime'},
+    {src:'https://i.ibb.co/5xTrKmGd/breeze.jpg',             name:'Breeze'},
+    {src:'https://i.ibb.co/prW2BbST/bleiz.jpg',              name:'Blaze'},
+    {src:'https://i.ibb.co/8nn3k7xG/silver-fish.jpg',        name:'Silverfish'},
+    {src:'https://i.ibb.co/NddctqZT/mu-eco-de-nieve.jpg',    name:'Muñeco de Nieve'},
+    {src:'https://i.ibb.co/n8t2wqJb/piblin.jpg',             name:'Piglin'},
+    {src:'https://i.ibb.co/LDRMDbKt/oglin-3.jpg',            name:'Hoglin 3'},
+    {src:'https://i.ibb.co/pj39ZhJP/oglin-2.jpg',            name:'Hoglin 2'},
+    {src:'https://i.ibb.co/BHxXt8s8/oglin.jpg',              name:'Hoglin'},
+    {src:'https://i.ibb.co/JFKRGrnC/ezqueleto-4.jpg',        name:'Esqueleto 4'},
+    {src:'https://i.ibb.co/LXKbkCdK/ezqueleto-3.jpg',        name:'Esqueleto 3'},
+    {src:'https://i.ibb.co/8nZ7DtnP/ezqueleto-2.jpg',        name:'Esqueleto 2'},
+    {src:'https://i.ibb.co/67qbYj24/ezqueleto.jpg',          name:'Esqueleto'},
+    {src:'https://i.ibb.co/JF8b9NTt/zombie-2.jpg',           name:'Zombie 2'},
+    {src:'https://i.ibb.co/8DBXL8xZ/aldeano-zompie.jpg',     name:'Aldeano Zombie'},
+    {src:'https://i.ibb.co/zVt6wsRX/aldeano-normal.jpg',     name:'Aldeano Normal'},
+    {src:'https://i.ibb.co/8gz7fxnc/golen.jpg',              name:'Golem de Hierro'},
+    {src:'https://i.ibb.co/Q30pD4Fv/gusano-morado.jpg',      name:'Gusano Morado'},
+    {src:'https://i.ibb.co/fBW1Hz1/enderman.jpg',            name:'Enderman'},
+    {src:'https://i.ibb.co/m5xh7g80/pendeejo-que-hace-volar.jpg', name:'Shulker'},
+    {src:'https://i.ibb.co/1YWrSxxN/whiter.jpg',             name:'Wither'},
+    {src:'https://i.ibb.co/6GX7v2b/pendejo-azul.jpg',        name:'Wandering Trader'},
+    {src:'https://i.ibb.co/KpjVM0sh/dragon.jpg',             name:'Dragon del End'},
+    {src:'https://i.ibb.co/v6wJN0gw/aldeano.jpg',            name:'Aldeano'},
+    {src:'https://i.ibb.co/5WPHJymn/gigante.jpg',            name:'Gigante'},
+    {src:'https://i.ibb.co/Hpt9JhBX/bruja.jpg',              name:'Bruja'},
+    {src:'https://i.ibb.co/wFwKJwkt/Maldeano-magico.jpg',    name:'Evoker'},
+    {src:'https://i.ibb.co/V03VdFP8/Maldeano-1.jpg',         name:'Pillager'},
+    {src:'https://i.ibb.co/21VzSkym/Maldeano-con-vallesta.jpg', name:'Pillager Ballesta'},
+    {src:'https://i.ibb.co/q30Q9L3q/Maldeano.jpg',           name:'Vindicator'},
+    {src:'https://i.ibb.co/QjNHRsWs/aline-malo.jpg',         name:'Vex'},
+    {src:'https://i.ibb.co/vvT4Dtdn/aline.jpg',              name:'Allay'},
+    {src:'https://i.ibb.co/WRVDpqR/salmon.jpg',              name:'Salmon'},
+    {src:'https://i.ibb.co/Y7DKMpmr/pez-payaso.jpg',         name:'Pez Payaso'},
+    {src:'https://i.ibb.co/S7MmkHNf/pez-globo.jpg',          name:'Pez Globo'},
+    {src:'https://i.ibb.co/G37VMGSq/delfin.jpg',             name:'Delfin'},
+    {src:'https://i.ibb.co/QvftNKkp/ojo-grande.jpg',         name:'Elder Guardian'},
+    {src:'https://i.ibb.co/7tbrjMfH/ojo-peque-o.jpg',        name:'Guardian'},
+    {src:'https://i.ibb.co/N2j6pJhy/pulpo.jpg',              name:'Pulpo'},
+    {src:'https://i.ibb.co/TBh3qWDd/pulpo-brillante.jpg',    name:'Pulpo Brillante'},
+    {src:'https://i.ibb.co/WN1H8vwq/zombie-acuatico.jpg',    name:'Zombie Acuatico'},
+    {src:'https://i.ibb.co/nMmzpNSy/pez.jpg',                name:'Pez'},
+    {src:'https://i.ibb.co/vxbbZd2Y/ajolote.jpg',            name:'Ajolote'},
+    {src:'https://i.ibb.co/zWw0S3Ld/tortuga.jpg',            name:'Tortuga'},
+    {src:'https://i.ibb.co/Cprzm0hs/renacuajo.jpg',          name:'Renacuajo'},
+    {src:'https://i.ibb.co/MkQJ7CbK/rana.jpg',               name:'Rana'},
+    {src:'https://i.ibb.co/k616vwhR/no-se.jpg',              name:'Mob Misterioso'},
+    {src:'https://i.ibb.co/hR3GPq1z/oso-polar.jpg',          name:'Oso Polar'},
+    {src:'https://i.ibb.co/k2KRW09C/armadillo.jpg',          name:'Armadillo'},
+    {src:'https://i.ibb.co/mVgRKTyk/llama-con-montura.jpg',  name:'Llama con Montura'},
+    {src:'https://i.ibb.co/XkVYfcs6/fantom.jpg',             name:'Phantom'},
+    {src:'https://i.ibb.co/23Brdwbx/murcielago.jpg',         name:'Murcielago'},
+    {src:'https://i.ibb.co/XxW1cS1d/abeja.jpg',              name:'Abeja'},
+    {src:'https://i.ibb.co/xSM5s7y0/loro.jpg',               name:'Loro'},
+    {src:'https://i.ibb.co/ksQsmY3n/panda.jpg',              name:'Panda'},
+    {src:'https://i.ibb.co/fVSs4Lry/zorro.jpg',              name:'Zorro'},
+    {src:'https://i.ibb.co/VYhp7zwb/cabra.jpg',              name:'Cabra'},
+    {src:'https://i.ibb.co/CsbdC9xJ/camello.jpg',            name:'Camello'},
+    {src:'https://i.ibb.co/6cpGv58x/llama.jpg',              name:'Llama'},
+  ];
+
+  const RANDOM_COUNT = 25;
+  let eliminated = [];
+  let currentMobs = []; // mobs actualmente mostrados (todos o random)
+  let isRandomMode = false;
+
+  function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+
+  function updateCountBadge(){
+    const total = currentMobs.length;
+    const elim = eliminated.filter(Boolean).length;
+    const badge = document.getElementById('mobs-count-badge');
+    const countEl = document.getElementById('mobs-eliminated-count');
+    if(badge){
+      if(isRandomMode){
+        badge.textContent = (total - elim) + ' / ' + total + ' MOBS · RANDOM 5×5';
+      } else {
+        badge.textContent = (total - elim) + ' / ' + total + ' MOBS';
+      }
+    }
+    if(countEl){
+      countEl.textContent = elim > 0 ? (elim + ' ELIMINADO' + (elim > 1 ? 'S' : '')) : '';
+    }
+  }
+
+  function buildGrid(mobs){
+    currentMobs = mobs;
+    eliminated = new Array(mobs.length).fill(false);
+    const grid = document.getElementById('mobs-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+
+    // Si es modo random 5x5, forzamos 5 columnas fijas
+    if(isRandomMode){
+      grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    } else {
+      grid.style.gridTemplateColumns = '';  // vuelve al CSS por defecto (auto-fill)
+    }
+
+    mobs.forEach((mob, idx) => {
+      const card = document.createElement('div');
+      card.className = 'mob-card';
+      card.title = mob.name;
+
+      const img = document.createElement('img');
+      img.className = 'mob-img';
+      img.src = mob.src;
+      img.alt = mob.name;
+      img.loading = 'lazy';
+      img.draggable = false;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'mob-eliminated-overlay';
+      const xMark = document.createElement('div');
+      xMark.className = 'mob-x';
+      xMark.textContent = '✕';
+      overlay.appendChild(xMark);
+
+      card.appendChild(img);
+      card.appendChild(overlay);
+
+      card.addEventListener('click', () => {
+        eliminated[idx] = !eliminated[idx];
+        card.classList.add('mob-eliminating');
+        setTimeout(() => card.classList.remove('mob-eliminating'), 350);
+        card.classList.toggle('mob-eliminated', eliminated[idx]);
+        updateCountBadge();
+      });
+
+      grid.appendChild(card);
+    });
+    updateCountBadge();
+  }
+
+  function activateRandomMode(){
+    isRandomMode = true;
+    const randomBtn = document.getElementById('mobs-random-btn');
+    if(randomBtn) randomBtn.classList.add('mobs-random-active');
+    const selected = shuffle(MOBS).slice(0, RANDOM_COUNT);
+    buildGrid(selected);
+  }
+
+  function deactivateRandomMode(){
+    isRandomMode = false;
+    const randomBtn = document.getElementById('mobs-random-btn');
+    if(randomBtn) randomBtn.classList.remove('mobs-random-active');
+    buildGrid(MOBS);
+  }
+
+  function openMobs(){
+    isRandomMode = false;
+    const randomBtn = document.getElementById('mobs-random-btn');
+    if(randomBtn) randomBtn.classList.remove('mobs-random-active');
+    buildGrid(MOBS);
+    document.getElementById('modal-mobs').classList.add('open');
+  }
+
+  document.getElementById('game-card-mobs').addEventListener('click', openMobs);
+
+  document.getElementById('mobs-random-btn').addEventListener('click', () => {
+    if(isRandomMode){
+      // Si ya está en modo random, genera otro set distinto
+      activateRandomMode();
+    } else {
+      activateRandomMode();
+    }
+  });
+
+  document.getElementById('mobs-reset-btn').addEventListener('click', () => {
+    eliminated = new Array(currentMobs.length).fill(false);
+    document.querySelectorAll('#mobs-grid .mob-card').forEach(c => c.classList.remove('mob-eliminated'));
+    updateCountBadge();
+  });
+
+  // Botón para volver a ver todos los mobs desde random
+  // (doble click en Random vuelve a randomizar, click en reset limpia eliminados)
+  // Para volver al modo completo, reasignamos la lógica del botón de reset
+  // cuando está en modo random: muestra un segundo click para volver
+  document.getElementById('mobs-reset-btn').addEventListener('dblclick', () => {
+    if(isRandomMode) deactivateRandomMode();
+  });
+
+  document.getElementById('modal-mobs-close').addEventListener('click', () => {
+    document.getElementById('modal-mobs').classList.remove('open');
+  });
+
+  document.getElementById('modal-mobs').addEventListener('click', e => {
+    if(e.target === document.getElementById('modal-mobs')){
+      document.getElementById('modal-mobs').classList.remove('open');
+    }
+  });
+})();
 
     // Track eliminated state in memory (resets on re-open)
     let eliminated = new Array(MOBS.length).fill(false);
@@ -1199,7 +1343,6 @@ aside.mobile-open{transform:translateX(0)!important;}
         document.getElementById('modal-mobs').classList.remove('open');
       }
     });
-  })();
   </script>
 </body>
 </html>
