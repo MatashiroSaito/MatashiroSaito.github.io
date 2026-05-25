@@ -1200,12 +1200,25 @@ aside.mobile-open{transform:translateX(0)!important;}
     updateCountBadge();
   }
 
+let randomSets = [];
+  let randomSetIdx = -1;
+
+  function generateRandomSets(){
+    randomSets = [];
+    // Genera 4 sets de 25 mobs distintos (fijos hasta que se vuelva a abrir)
+    for(let i = 0; i < 4; i++){
+      randomSets.push(shuffle(MOBS).slice(0, RANDOM_COUNT));
+    }
+    randomSetIdx = -1;
+  }
+
   function activateRandomMode(){
     isRandomMode = true;
     const randomBtn = document.getElementById('mobs-random-btn');
     if(randomBtn) randomBtn.classList.add('mobs-random-active');
-    const selected = shuffle(MOBS).slice(0, RANDOM_COUNT);
-    buildGrid(selected);
+    // Cicla entre los 4 sets pre-generados (0 → 1 → 2 → 3 → 0 → ...)
+    randomSetIdx = (randomSetIdx + 1) % 4;
+    buildGrid(randomSets[randomSetIdx]);
   }
 
   function deactivateRandomMode(){
@@ -1219,6 +1232,7 @@ aside.mobile-open{transform:translateX(0)!important;}
     isRandomMode = false;
     const randomBtn = document.getElementById('mobs-random-btn');
     if(randomBtn) randomBtn.classList.remove('mobs-random-active');
+    generateRandomSets();   // ← genera los 4 sets al abrir
     buildGrid(MOBS);
     document.getElementById('modal-mobs').classList.add('open');
   }
@@ -1226,12 +1240,7 @@ aside.mobile-open{transform:translateX(0)!important;}
   document.getElementById('game-card-mobs').addEventListener('click', openMobs);
 
   document.getElementById('mobs-random-btn').addEventListener('click', () => {
-    if(isRandomMode){
-      // Si ya está en modo random, genera otro set distinto
-      activateRandomMode();
-    } else {
-      activateRandomMode();
-    }
+    activateRandomMode();   // ← siempre cicla, sin if/else
   });
 
   document.getElementById('mobs-reset-btn').addEventListener('click', () => {
